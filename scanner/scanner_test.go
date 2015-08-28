@@ -5,54 +5,70 @@
 package scanner
 
 import (
+	"reflect"
 	"testing"
 )
 
-func TestMatchers(t *testing.T) {
-	// Just basic checks, not exhaustive at all.
-	checkMatch := func(s string, ttList ...interface{}) {
-		scanner := New(s)
+func T(ty tokenType, v string) Token {
+	return Token{ty, v, 0, 0}
+}
 
-		i := 0
-		for i < len(ttList) {
-			tt := ttList[i].(tokenType)
-			tVal := ttList[i+1].(string)
-			if tok := scanner.Next(); tok.Type != tt || tok.Value != tVal {
-				t.Errorf("did not match: %s (got %v)", s, tok)
+func TestSuccessfulScan(t *testing.T) {
+	for _, test := range []struct {
+		input  string
+		tokens []Token
+	}{
+		{"bar(", []Token{T(TokenFunction, "bar(")}},
+		{"abcd", []Token{T(TokenIdent, "abcd")}},
+		{`"abcd"`, []Token{T(TokenString, `"abcd"`)}},
+		{"'abcd'", []Token{T(TokenString, "'abcd'")}},
+		{"#name", []Token{T(TokenHash, "#name")}},
+		{"4.2", []Token{T(TokenNumber, "4.2")}},
+		{".42", []Token{T(TokenNumber, ".42")}},
+		{"42%", []Token{T(TokenPercentage, "42%")}},
+		{"4.2%", []Token{T(TokenPercentage, "4.2%")}},
+		{".42%", []Token{T(TokenPercentage, ".42%")}},
+		{"42px", []Token{T(TokenDimension, "42px")}},
+		{"url('http://www.google.com/')", []Token{T(TokenURI, "url('http://www.google.com/')")}},
+		{"U+0042", []Token{T(TokenUnicodeRange, "U+0042")}},
+		{"<!--", []Token{T(TokenCDO, "<!--")}},
+		{"-->", []Token{T(TokenCDC, "-->")}},
+		{"   \n   \t   \n", []Token{T(TokenS, "   \n   \t   \n")}},
+		{"/* foo */", []Token{T(TokenComment, "/* foo */")}},
+		{"bar(", []Token{T(TokenFunction, "bar(")}},
+		{"~=", []Token{T(TokenIncludes, "~=")}},
+		{"|=", []Token{T(TokenDashMatch, "|=")}},
+		{"^=", []Token{T(TokenPrefixMatch, "^=")}},
+		{"$=", []Token{T(TokenSuffixMatch, "$=")}},
+		{"*=", []Token{T(TokenSubstringMatch, "*=")}},
+		{"{", []Token{T(TokenChar, "{")}},
+		{"\uFEFF", []Token{T(TokenBOM, "\uFEFF")}},
+
+		{"42''", []Token{
+			T(TokenNumber, "42"),
+			T(TokenString, "''"),
+		}},
+		{`╯︵┻━┻"stuff"`, []Token{
+			T(TokenIdent, "╯︵┻━┻"),
+			T(TokenString, `"stuff"`),
+		}},
+	} {
+		tokens := []Token{}
+		s := New(test.input)
+		for {
+			tok := s.Next()
+			if tok.Type == TokenError {
+				t.Fatalf("Error token with: %q", test.input)
 			}
-
-			i += 2
+			if tok.Type == TokenEOF {
+				break
+			}
+			tok.Line = 0
+			tok.Column = 0
+			tokens = append(tokens, *tok)
 		}
-
-		if tok := scanner.Next(); tok.Type != TokenEOF {
-			t.Errorf("missing EOF after token %s, got %+v", s, tok)
+		if !reflect.DeepEqual(tokens, test.tokens) {
+			t.Fatalf("For input string %q, bad tokens. Expected:\n%#v\n\nGot:\n%#v", test.input, test.tokens, tokens)
 		}
 	}
-
-	checkMatch("abcd", TokenIdent, "abcd")
-	checkMatch(`"abcd"`, TokenString, `"abcd"`)
-	checkMatch("'abcd'", TokenString, "'abcd'")
-	checkMatch("#name", TokenHash, "#name")
-	checkMatch("42''", TokenNumber, "42", TokenString, "''")
-	checkMatch("4.2", TokenNumber, "4.2")
-	checkMatch(".42", TokenNumber, ".42")
-	checkMatch("42%", TokenPercentage, "42%")
-	checkMatch("4.2%", TokenPercentage, "4.2%")
-	checkMatch(".42%", TokenPercentage, ".42%")
-	checkMatch("42px", TokenDimension, "42px")
-	checkMatch("url('http://www.google.com/')", TokenURI, "url('http://www.google.com/')")
-	checkMatch("U+0042", TokenUnicodeRange, "U+0042")
-	checkMatch("<!--", TokenCDO, "<!--")
-	checkMatch("-->", TokenCDC, "-->")
-	checkMatch("   \n   \t   \n", TokenS, "   \n   \t   \n")
-	checkMatch("/* foo */", TokenComment, "/* foo */")
-	checkMatch("bar(", TokenFunction, "bar(")
-	checkMatch("~=", TokenIncludes, "~=")
-	checkMatch("|=", TokenDashMatch, "|=")
-	checkMatch("^=", TokenPrefixMatch, "^=")
-	checkMatch("$=", TokenSuffixMatch, "$=")
-	checkMatch("*=", TokenSubstringMatch, "*=")
-	checkMatch("{", TokenChar, "{")
-	checkMatch("\uFEFF", TokenBOM, "\uFEFF")
-	checkMatch(`╯︵┻━┻"stuff"`, TokenIdent, "╯︵┻━┻", TokenString, `"stuff"`)
 }
