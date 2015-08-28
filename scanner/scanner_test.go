@@ -66,6 +66,22 @@ func TestSuccessfulScan(t *testing.T) {
 			T(TokenChar, ":"),
 			T(TokenIdent, "blue"),
 		}},
+		{"color:rgb(0,1,2)", []Token{
+			T(TokenIdent, "color"),
+			T(TokenChar, ":"),
+			T(TokenFunction, "rgb("),
+			T(TokenNumber, "0"),
+			T(TokenChar, ","),
+			T(TokenNumber, "1"),
+			T(TokenChar, ","),
+			T(TokenNumber, "2"),
+			T(TokenChar, ")"),
+		}},
+		{"color:#fff", []Token{
+			T(TokenIdent, "color"),
+			T(TokenChar, ":"),
+			T(TokenHash, "#fff"),
+		}},
 	} {
 		tokens := []Token{}
 		s := New(test.input)
