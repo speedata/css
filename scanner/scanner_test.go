@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func T(ty tokenType, v string) Token {
+func T(ty TokenType, v string) Token {
 	return Token{ty, v, 0, 0}
 }
 

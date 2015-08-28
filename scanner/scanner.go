@@ -12,17 +12,22 @@ import (
 	"unicode/utf8"
 )
 
-// tokenType identifies the type of lexical tokens.
-type tokenType int
+// TokenType identifies the type of lexical tokens.
+type TokenType int
 
 // String returns a string representation of the token type.
-func (t tokenType) String() string {
+func (t TokenType) String() string {
+	return tokenNames[t]
+}
+
+// GoString returns a string representation of the token type.
+func (t TokenType) GoString() string {
 	return tokenNames[t]
 }
 
 // Token represents a token and the corresponding string.
 type Token struct {
-	Type   tokenType
+	Type   TokenType
 	Value  string
 	Line   int
 	Column int
@@ -43,7 +48,7 @@ func (t *Token) String() string {
 // The complete list of tokens in CSS3.
 const (
 	// Scanner flags.
-	TokenError tokenType = iota
+	TokenError TokenType = iota
 	TokenEOF
 	// From now on, only tokens from the CSS specification.
 	TokenIdent
@@ -69,8 +74,8 @@ const (
 	TokenBOM
 )
 
-// tokenNames maps tokenType's to their names. Used for conversion to string.
-var tokenNames = map[tokenType]string{
+// tokenNames maps TokenType's to their names. Used for conversion to string.
+var tokenNames = map[TokenType]string{
 	TokenError:          "error",
 	TokenEOF:            "EOF",
 	TokenIdent:          "IDENT",
@@ -121,7 +126,7 @@ var macros = map[string]string{
 }
 
 // productions maps the list of tokens to patterns to be expanded.
-var productions = map[tokenType]string{
+var productions = map[TokenType]string{
 	// Unused regexps (matched using other methods) are commented out.
 	TokenIdent:        `{ident}`,
 	TokenAtKeyword:    `@{ident}`,
@@ -150,11 +155,11 @@ var productions = map[tokenType]string{
 //
 // The map is filled on init() using the macros and productions defined in
 // the CSS specification.
-var matchers = map[tokenType]*regexp.Regexp{}
+var matchers = map[TokenType]*regexp.Regexp{}
 
 // matchOrder is the order to test regexps when first-char shortcuts
 // can't be used.
-var matchOrder = []tokenType{
+var matchOrder = []TokenType{
 	TokenURI,
 	TokenFunction,
 	TokenUnicodeRange,
@@ -318,7 +323,7 @@ func (s *Scanner) updatePosition(text string) {
 }
 
 // emitToken returns a Token for the string v and updates the scanner position.
-func (s *Scanner) emitToken(t tokenType, v string) *Token {
+func (s *Scanner) emitToken(t TokenType, v string) *Token {
 	token := &Token{t, v, s.row, s.col}
 	s.updatePosition(v)
 	return token
@@ -328,7 +333,7 @@ func (s *Scanner) emitToken(t tokenType, v string) *Token {
 // position in a simplified manner.
 //
 // The string is known to have only ASCII characters and to not have a newline.
-func (s *Scanner) emitSimple(t tokenType, v string) *Token {
+func (s *Scanner) emitSimple(t TokenType, v string) *Token {
 	token := &Token{t, v, s.row, s.col}
 	s.col += len(v)
 	s.pos += len(v)
@@ -340,7 +345,7 @@ func (s *Scanner) emitSimple(t tokenType, v string) *Token {
 // first character from the prefix.
 //
 // The prefix is known to have only ASCII characters and to not have a newline.
-func (s *Scanner) emitPrefixOrChar(t tokenType, prefix string) *Token {
+func (s *Scanner) emitPrefixOrChar(t TokenType, prefix string) *Token {
 	if strings.HasPrefix(s.input[s.pos:], prefix) {
 		return s.emitSimple(t, prefix)
 	}
