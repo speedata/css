@@ -5,29 +5,31 @@
 package scanner
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 )
 
-// TokenType identifies the type of lexical tokens.
-type TokenType int
+// Type identifies the type of lexical tokens.
+type Type int
 
 // String returns a string representation of the token type.
-func (t TokenType) String() string {
+func (t Type) String() string {
 	return tokenNames[t]
 }
 
 // GoString returns a string representation of the token type.
-func (t TokenType) GoString() string {
+func (t Type) GoString() string {
 	return tokenNames[t]
 }
 
 // Token represents a token and the corresponding string.
 type Token struct {
-	Type   TokenType
+	Type   Type
 	Value  string
 	Line   int
 	Column int
@@ -48,57 +50,57 @@ func (t *Token) String() string {
 // The complete list of tokens in CSS3.
 const (
 	// Scanner flags.
-	TokenError TokenType = iota
-	TokenEOF
+	Error Type = iota
+	EOF
 	// From now on, only tokens from the CSS specification.
-	TokenIdent
-	TokenAtKeyword
-	TokenString
-	TokenHash
-	TokenNumber
-	TokenPercentage
-	TokenDimension
-	TokenURI
-	TokenUnicodeRange
-	TokenCDO
-	TokenCDC
-	TokenS
-	TokenComment
-	TokenFunction
-	TokenIncludes
-	TokenDashMatch
-	TokenPrefixMatch
-	TokenSuffixMatch
-	TokenSubstringMatch
-	TokenDelim
-	TokenBOM
+	Ident
+	AtKeyword
+	String
+	Hash
+	Number
+	Percentage
+	Dimension
+	URI
+	UnicodeRange
+	CDO
+	CDC
+	S
+	Comment
+	Function
+	Includes
+	DashMatch
+	PrefixMatch
+	SuffixMatch
+	SubstringMatch
+	Delim
+	BOM
 )
 
-// tokenNames maps TokenType's to their names. Used for conversion to string.
-var tokenNames = map[TokenType]string{
-	TokenError:          "error",
-	TokenEOF:            "EOF",
-	TokenIdent:          "IDENT",
-	TokenAtKeyword:      "ATKEYWORD",
-	TokenString:         "STRING",
-	TokenHash:           "HASH",
-	TokenNumber:         "NUMBER",
-	TokenPercentage:     "PERCENTAGE",
-	TokenDimension:      "DIMENSION",
-	TokenURI:            "URI",
-	TokenUnicodeRange:   "UNICODE-RANGE",
-	TokenCDO:            "CDO",
-	TokenCDC:            "CDC",
-	TokenS:              "S",
-	TokenComment:        "COMMENT",
-	TokenFunction:       "FUNCTION",
-	TokenIncludes:       "INCLUDES",
-	TokenDashMatch:      "DASHMATCH",
-	TokenPrefixMatch:    "PREFIXMATCH",
-	TokenSuffixMatch:    "SUFFIXMATCH",
-	TokenSubstringMatch: "SUBSTRINGMATCH",
-	TokenDelim:          "DELIM",
-	TokenBOM:            "BOM",
+// tokenNames maps Type's to their names. Used for conversion to string.
+var tokenNames = map[Type]string{
+	Error:          "error",
+	EOF:            "EOF",
+	Ident:          "IDENT",
+	AtKeyword:      "ATKEYWORD",
+	String:         "STRING",
+	Hash:           "HASH",
+	Number:         "NUMBER",
+	Percentage:     "PERCENTAGE",
+	Dimension:      "DIMENSION",
+	URI:            "URI",
+	UnicodeRange:   "UNICODE-RANGE",
+	CDO:            "CDO",
+	CDC:            "CDC",
+	S:              "S",
+	Comment:        "COMMENT",
+	Function:       "FUNCTION",
+	Includes:       "INCLUDES",
+	DashMatch:      "DASHMATCH",
+	PrefixMatch:    "PREFIXMATCH",
+	SuffixMatch:    "SUFFIXMATCH",
+	SubstringMatch: "SUBSTRINGMATCH",
+	Delim:          "DELIM",
+	BOM:            "BOM",
 }
 
 // Macros and productions -----------------------------------------------------
@@ -126,48 +128,48 @@ var macros = map[string]string{
 }
 
 // productions maps the list of tokens to patterns to be expanded.
-var productions = map[TokenType]string{
+var productions = map[Type]string{
 	// Unused regexps (matched using other methods) are commented out.
-	TokenIdent:        `{ident}`,
-	TokenAtKeyword:    `@{ident}`,
-	TokenString:       `{string}`,
-	TokenHash:         `#{name}`,
-	TokenNumber:       `{num}`,
-	TokenPercentage:   `{num}%`,
-	TokenDimension:    `{num}{ident}`,
-	TokenURI:          `[Uu][Rr][Ll]\({w}(?:{string}|{urlchar}*){w}\)`,
-	TokenUnicodeRange: `[Uu]\+[0-9A-F\?]{1,6}(?:-[0-9A-F]{1,6})?`,
-	//TokenCDO:            `<!--`,
-	TokenCDC:      `-->`,
-	TokenS:        `{wc}+`,
-	TokenComment:  `/\*[^\*]*[\*]+(?:[^/][^\*]*[\*]+)*/`,
-	TokenFunction: `{ident}\(`,
-	//TokenIncludes:       `~=`,
-	//TokenDashMatch:      `\|=`,
-	//TokenPrefixMatch:    `\^=`,
-	//TokenSuffixMatch:    `\$=`,
-	//TokenSubstringMatch: `\*=`,
-	//TokenDelim:           `[^"']`,
-	//TokenBOM:            "\uFEFF",
+	Ident:        `{ident}`,
+	AtKeyword:    `@{ident}`,
+	String:       `{string}`,
+	Hash:         `#{name}`,
+	Number:       `{num}`,
+	Percentage:   `{num}%`,
+	Dimension:    `{num}{ident}`,
+	URI:          `[Uu][Rr][Ll]\({w}(?:{string}|{urlchar}*){w}\)`,
+	UnicodeRange: `[Uu]\+[0-9A-F\?]{1,6}(?:-[0-9A-F]{1,6})?`,
+	//CDO:            `<!--`,
+	CDC:      `-->`,
+	S:        `{wc}+`,
+	Comment:  `/\*[^\*]*[\*]+(?:[^/][^\*]*[\*]+)*/`,
+	Function: `{ident}\(`,
+	//Includes:       `~=`,
+	//DashMatch:      `\|=`,
+	//PrefixMatch:    `\^=`,
+	//SuffixMatch:    `\$=`,
+	//SubstringMatch: `\*=`,
+	//Delim:           `[^"']`,
+	//BOM:            "\uFEFF",
 }
 
 // matchers maps the list of tokens to compiled regular expressions.
 //
 // The map is filled on init() using the macros and productions defined in
 // the CSS specification.
-var matchers = map[TokenType]*regexp.Regexp{}
+var matchers = map[Type]*regexp.Regexp{}
 
 // matchOrder is the order to test regexps when first-char shortcuts
 // can't be used.
-var matchOrder = []TokenType{
-	TokenURI,
-	TokenFunction,
-	TokenUnicodeRange,
-	TokenIdent,
-	TokenDimension,
-	TokenPercentage,
-	TokenNumber,
-	TokenCDC,
+var matchOrder = []Type{
+	URI,
+	Function,
+	UnicodeRange,
+	Ident,
+	Dimension,
+	Percentage,
+	Number,
+	CDC,
 }
 
 func init() {
@@ -207,22 +209,22 @@ type Scanner struct {
 
 // Next returns the next token from the input.
 //
-// At the end of the input the token type is TokenEOF.
+// At the end of the input the token type is EOF.
 //
-// If the input can't be tokenized the token type is TokenError. This occurs
+// If the input can't be tokenized the token type is Error. This occurs
 // in case of unclosed quotation marks or comments.
 func (s *Scanner) Next() *Token {
 	if s.err != nil {
 		return s.err
 	}
 	if s.pos >= len(s.input) {
-		s.err = &Token{TokenEOF, "", s.row, s.col}
+		s.err = &Token{EOF, "", s.row, s.col}
 		return s.err
 	}
 	if s.pos == 0 {
 		// Test BOM only once, at the beginning of the file.
 		if strings.HasPrefix(s.input, "\uFEFF") {
-			return s.emitSimple(TokenBOM, "\uFEFF")
+			return s.emitSimple(BOM, "\uFEFF")
 		}
 	}
 	// There's a lot we can guess based on the first byte so we'll take a
@@ -231,68 +233,68 @@ func (s *Scanner) Next() *Token {
 	switch input[0] {
 	case '\t', '\n', '\f', '\r', ' ':
 		// Whitespace.
-		return s.emitToken(TokenS, matchers[TokenS].FindString(input))
+		return s.emitToken(S, matchers[S].FindString(input))
 	case '.':
 		// Dot is too common to not have a quick check.
 		// We'll test if this is a Char; if it is followed by a number it is a
 		// dimension/percentage/number, and this will be matched later.
 		if len(input) > 1 && !unicode.IsDigit(rune(input[1])) {
-			return s.emitSimple(TokenDelim, ".")
+			return s.emitSimple(Delim, ".")
 		}
 	case '#':
 		// Another common one: Hash or Char.
-		if match := matchers[TokenHash].FindString(input); match != "" {
-			return s.emitToken(TokenHash, match)
+		if match := matchers[Hash].FindString(input); match != "" {
+			return s.emitToken(Hash, match)
 		}
-		return s.emitSimple(TokenDelim, "#")
+		return s.emitSimple(Delim, "#")
 	case '@':
 		// Another common one: AtKeyword or Char.
-		if match := matchers[TokenAtKeyword].FindString(input); match != "" {
-			return s.emitSimple(TokenAtKeyword, match)
+		if match := matchers[AtKeyword].FindString(input); match != "" {
+			return s.emitSimple(AtKeyword, match)
 		}
-		return s.emitSimple(TokenDelim, "@")
+		return s.emitSimple(Delim, "@")
 	case ':', ',', ';', '%', '&', '+', '=', '>', '(', ')', '[', ']', '{', '}':
 		// More common chars.
-		return s.emitSimple(TokenDelim, string(input[0]))
+		return s.emitSimple(Delim, string(input[0]))
 	case '"', '\'':
 		// String or error.
-		match := matchers[TokenString].FindString(input)
+		match := matchers[String].FindString(input)
 		if match != "" {
-			return s.emitToken(TokenString, match)
+			return s.emitToken(String, match)
 		} else {
-			s.err = &Token{TokenError, "unclosed quotation mark", s.row, s.col}
+			s.err = &Token{Error, "unclosed quotation mark", s.row, s.col}
 			return s.err
 		}
 	case '/':
 		// Comment, error or Char.
 		if len(input) > 1 && input[1] == '*' {
-			match := matchers[TokenComment].FindString(input)
+			match := matchers[Comment].FindString(input)
 			if match != "" {
-				return s.emitToken(TokenComment, match)
+				return s.emitToken(Comment, match)
 			} else {
-				s.err = &Token{TokenError, "unclosed comment", s.row, s.col}
+				s.err = &Token{Error, "unclosed comment", s.row, s.col}
 				return s.err
 			}
 		}
-		return s.emitSimple(TokenDelim, "/")
+		return s.emitSimple(Delim, "/")
 	case '~':
 		// Includes or Char.
-		return s.emitPrefixOrChar(TokenIncludes, "~=")
+		return s.emitPrefixOrChar(Includes, "~=")
 	case '|':
 		// DashMatch or Char.
-		return s.emitPrefixOrChar(TokenDashMatch, "|=")
+		return s.emitPrefixOrChar(DashMatch, "|=")
 	case '^':
 		// PrefixMatch or Char.
-		return s.emitPrefixOrChar(TokenPrefixMatch, "^=")
+		return s.emitPrefixOrChar(PrefixMatch, "^=")
 	case '$':
 		// SuffixMatch or Char.
-		return s.emitPrefixOrChar(TokenSuffixMatch, "$=")
+		return s.emitPrefixOrChar(SuffixMatch, "$=")
 	case '*':
 		// SubstringMatch or Char.
-		return s.emitPrefixOrChar(TokenSubstringMatch, "*=")
+		return s.emitPrefixOrChar(SubstringMatch, "*=")
 	case '<':
 		// CDO or Char.
-		return s.emitPrefixOrChar(TokenCDO, "<!--")
+		return s.emitPrefixOrChar(CDO, "<!--")
 	}
 	// Test all regexps, in order.
 	for _, token := range matchOrder {
@@ -303,7 +305,7 @@ func (s *Scanner) Next() *Token {
 	// We already handled unclosed quotation marks and comments,
 	// so this can only be a Char.
 	r, width := utf8.DecodeRuneInString(input)
-	token := &Token{TokenDelim, string(r), s.row, s.col}
+	token := &Token{Delim, string(r), s.row, s.col}
 	s.col += width
 	s.pos += width
 	return token
@@ -323,7 +325,7 @@ func (s *Scanner) updatePosition(text string) {
 }
 
 // emitToken returns a Token for the string v and updates the scanner position.
-func (s *Scanner) emitToken(t TokenType, v string) *Token {
+func (s *Scanner) emitToken(t Type, v string) *Token {
 	token := &Token{t, v, s.row, s.col}
 	s.updatePosition(v)
 	return token
@@ -333,7 +335,7 @@ func (s *Scanner) emitToken(t TokenType, v string) *Token {
 // position in a simplified manner.
 //
 // The string is known to have only ASCII characters and to not have a newline.
-func (s *Scanner) emitSimple(t TokenType, v string) *Token {
+func (s *Scanner) emitSimple(t Type, v string) *Token {
 	token := &Token{t, v, s.row, s.col}
 	s.col += len(v)
 	s.pos += len(v)
@@ -345,9 +347,147 @@ func (s *Scanner) emitSimple(t TokenType, v string) *Token {
 // first character from the prefix.
 //
 // The prefix is known to have only ASCII characters and to not have a newline.
-func (s *Scanner) emitPrefixOrChar(t TokenType, prefix string) *Token {
+func (s *Scanner) emitPrefixOrChar(t Type, prefix string) *Token {
 	if strings.HasPrefix(s.input[s.pos:], prefix) {
 		return s.emitSimple(t, prefix)
 	}
-	return s.emitSimple(TokenDelim, string(prefix[0]))
+	return s.emitSimple(Delim, string(prefix[0]))
+}
+
+func unbackslash(s string, isString bool) string {
+	// in general, strings are short, and do not contain backslashes; if
+	// that is the case, just bail out with no additional allocation.
+	if !strings.Contains(s, "\\") {
+		return s
+	}
+
+	in := bytes.NewBufferString(s)
+	var out bytes.Buffer
+	out.Grow(len(s))
+
+	hexChars := make([]byte, 6, 6)
+
+	for {
+		c, err := in.ReadByte()
+		if err == io.EOF {
+			break
+		}
+		if c != '\\' {
+			out.WriteByte(c)
+			continue
+		}
+
+		// c is now the first byte after the backslash
+		c, err = in.ReadByte()
+		if err == io.EOF {
+			out.WriteByte('\\')
+			break
+		}
+
+		// CSS 4.1.3 third bullet point: Rules for decoding backslashes.
+		// We won't process comments, so we skip that for now.
+		// First, special string rules:
+		if isString {
+			// If this is a string token, and the next thing is a newline
+			// (LF or CRLF), then the whole thing didn't happen.
+			if c == '\n' {
+				continue
+			}
+			if c == '\r' {
+				c, err = in.ReadByte()
+				if err == io.EOF {
+					out.WriteByte('\\')
+					break
+				}
+				if c == '\n' {
+					continue
+				} else {
+					// standard does not say what to do with backslash-CR
+					// that is not followed by a LF. Go ahead and eat the
+					// CR and return to normal processing.
+					in.UnreadByte()
+					continue
+				}
+			}
+		}
+
+		// Second, any non-hex digit, CR, LF, or FF gets replaced by the
+		// literal character. CR, LF, or FF, if left unescaped, presumably
+		// didn't make it this far to be decoded. So that just leaves the
+		// hex digits and the not-hex-digits.
+		switch {
+		case isHexChar(c):
+			// A hex specification is either 0-5 digits followed by
+			// optional whitespace which will be eaten, or exactly six
+			// digits.
+			hexChars = hexChars[:0]
+			hexChars = append(hexChars, c)
+
+		HEXLOOP:
+			for len(hexChars) < 6 {
+				nextChar, err := in.ReadByte()
+				if err == io.EOF {
+					break HEXLOOP
+				}
+
+				switch {
+				case isHexChar(nextChar):
+					hexChars = append(hexChars, nextChar)
+				case isWhitespace(nextChar):
+					// this ends up eating the whitespace char
+					break HEXLOOP
+				default:
+					// Non-space chars do not get eaten
+					in.UnreadByte()
+					break HEXLOOP
+				}
+			}
+
+			// The rune this represents:
+			r := decodeHex(hexChars)
+			out.WriteRune(r)
+
+		default:
+			out.WriteByte(c)
+		}
+
+	}
+
+	return out.String()
+}
+
+func isWhitespace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f'
+}
+
+func isHexChar(c byte) bool {
+	return c >= '0' && c <= '9' ||
+		c >= 'a' && c <= 'f' ||
+		c >= 'A' && c <= 'F'
+}
+
+func decodeHex(in []byte) rune {
+	val := rune(0)
+
+	for _, c := range in {
+		val = val << 4
+		val = val + rune(fromHexChar(c))
+	}
+
+	return val
+}
+
+// fromHexChar copied from encoding/hex/hex.go, except this is guaranteed
+// to only be called on hex chars, so no success flag.
+func fromHexChar(c byte) byte {
+	switch {
+	case '0' <= c && c <= '9':
+		return c - '0'
+	case 'a' <= c && c <= 'f':
+		return c - 'a' + 10
+	case 'A' <= c && c <= 'F':
+		return c - 'A' + 10
+	}
+	// satisfies compiler that there is a return.
+	return 0
 }
