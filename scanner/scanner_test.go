@@ -82,6 +82,29 @@ func TestSuccessfulScan(t *testing.T) {
 			T(TokenChar, ":"),
 			T(TokenHash, "#fff"),
 		}},
+
+		// Check note in CSS2 4.3.4:
+		// Note that COMMENT tokens cannot occur within other tokens: thus, "url(/*x*/pic.png)" denotes the URI "/*x*/pic.png", not "pic.png".
+		{"url(/*x*/pic.png)", []Token{
+			T(TokenURI, "url(/*x*/pic.png)"),
+		}},
+
+		// More URI testing, since it's important
+		{"url(/pic.png)", []Token{
+			T(TokenURI, "url(/pic.png)"),
+		}},
+		{"uRl(/pic.png)", []Token{
+			T(TokenURI, "uRl(/pic.png)"),
+		}},
+		{"url(\"/pic.png\")", []Token{
+			T(TokenURI, "url(\"/pic.png\")"),
+		}},
+		{"url('/pic.png')", []Token{
+			T(TokenURI, "url('/pic.png')"),
+		}},
+		{"url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')", []Token{
+			T(TokenURI, "url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')"),
+		}},
 	} {
 		tokens := []Token{}
 		s := New(test.input)
