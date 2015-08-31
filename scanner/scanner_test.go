@@ -41,7 +41,7 @@ func TestSuccessfulScan(t *testing.T) {
 		{"^=", []Token{T(TokenPrefixMatch, "^=")}},
 		{"$=", []Token{T(TokenSuffixMatch, "$=")}},
 		{"*=", []Token{T(TokenSubstringMatch, "*=")}},
-		{"{", []Token{T(TokenChar, "{")}},
+		{"{", []Token{T(TokenDelim, "{")}},
 		{"\uFEFF", []Token{T(TokenBOM, "\uFEFF")}},
 
 		{"42''", []Token{
@@ -54,32 +54,32 @@ func TestSuccessfulScan(t *testing.T) {
 		}},
 		{"color:red", []Token{
 			T(TokenIdent, "color"),
-			T(TokenChar, ":"),
+			T(TokenDelim, ":"),
 			T(TokenIdent, "red"),
 		}},
 		{"color:red;background:blue", []Token{
 			T(TokenIdent, "color"),
-			T(TokenChar, ":"),
+			T(TokenDelim, ":"),
 			T(TokenIdent, "red"),
-			T(TokenChar, ";"),
+			T(TokenDelim, ";"),
 			T(TokenIdent, "background"),
-			T(TokenChar, ":"),
+			T(TokenDelim, ":"),
 			T(TokenIdent, "blue"),
 		}},
 		{"color:rgb(0,1,2)", []Token{
 			T(TokenIdent, "color"),
-			T(TokenChar, ":"),
+			T(TokenDelim, ":"),
 			T(TokenFunction, "rgb("),
 			T(TokenNumber, "0"),
-			T(TokenChar, ","),
+			T(TokenDelim, ","),
 			T(TokenNumber, "1"),
-			T(TokenChar, ","),
+			T(TokenDelim, ","),
 			T(TokenNumber, "2"),
-			T(TokenChar, ")"),
+			T(TokenDelim, ")"),
 		}},
 		{"color:#fff", []Token{
 			T(TokenIdent, "color"),
-			T(TokenChar, ":"),
+			T(TokenDelim, ":"),
 			T(TokenHash, "#fff"),
 		}},
 
@@ -112,12 +112,12 @@ func TestSuccessfulScan(t *testing.T) {
 		// CSS2 section 4.1.1: "red-->" is IDENT "red--" followed by DELIM ">",
 		{"red-->", []Token{
 			T(TokenIdent, "red--"),
-			T(TokenChar, ">"),
+			T(TokenDelim, ">"),
 		}},
 
 		{"-moz-border:1", []Token{
 			T(TokenIdent, "-moz-border"),
-			T(TokenChar, ":"),
+			T(TokenDelim, ":"),
 			T(TokenNumber, "1"),
 		}},
 

@@ -70,7 +70,7 @@ const (
 	TokenPrefixMatch
 	TokenSuffixMatch
 	TokenSubstringMatch
-	TokenChar
+	TokenDelim
 	TokenBOM
 )
 
@@ -97,7 +97,7 @@ var tokenNames = map[TokenType]string{
 	TokenPrefixMatch:    "PREFIXMATCH",
 	TokenSuffixMatch:    "SUFFIXMATCH",
 	TokenSubstringMatch: "SUBSTRINGMATCH",
-	TokenChar:           "CHAR",
+	TokenDelim:          "DELIM",
 	TokenBOM:            "BOM",
 }
 
@@ -147,7 +147,7 @@ var productions = map[TokenType]string{
 	//TokenPrefixMatch:    `\^=`,
 	//TokenSuffixMatch:    `\$=`,
 	//TokenSubstringMatch: `\*=`,
-	//TokenChar:           `[^"']`,
+	//TokenDelim:           `[^"']`,
 	//TokenBOM:            "\uFEFF",
 }
 
@@ -237,23 +237,23 @@ func (s *Scanner) Next() *Token {
 		// We'll test if this is a Char; if it is followed by a number it is a
 		// dimension/percentage/number, and this will be matched later.
 		if len(input) > 1 && !unicode.IsDigit(rune(input[1])) {
-			return s.emitSimple(TokenChar, ".")
+			return s.emitSimple(TokenDelim, ".")
 		}
 	case '#':
 		// Another common one: Hash or Char.
 		if match := matchers[TokenHash].FindString(input); match != "" {
 			return s.emitToken(TokenHash, match)
 		}
-		return s.emitSimple(TokenChar, "#")
+		return s.emitSimple(TokenDelim, "#")
 	case '@':
 		// Another common one: AtKeyword or Char.
 		if match := matchers[TokenAtKeyword].FindString(input); match != "" {
 			return s.emitSimple(TokenAtKeyword, match)
 		}
-		return s.emitSimple(TokenChar, "@")
+		return s.emitSimple(TokenDelim, "@")
 	case ':', ',', ';', '%', '&', '+', '=', '>', '(', ')', '[', ']', '{', '}':
 		// More common chars.
-		return s.emitSimple(TokenChar, string(input[0]))
+		return s.emitSimple(TokenDelim, string(input[0]))
 	case '"', '\'':
 		// String or error.
 		match := matchers[TokenString].FindString(input)
@@ -274,7 +274,7 @@ func (s *Scanner) Next() *Token {
 				return s.err
 			}
 		}
-		return s.emitSimple(TokenChar, "/")
+		return s.emitSimple(TokenDelim, "/")
 	case '~':
 		// Includes or Char.
 		return s.emitPrefixOrChar(TokenIncludes, "~=")
@@ -303,7 +303,7 @@ func (s *Scanner) Next() *Token {
 	// We already handled unclosed quotation marks and comments,
 	// so this can only be a Char.
 	r, width := utf8.DecodeRuneInString(input)
-	token := &Token{TokenChar, string(r), s.row, s.col}
+	token := &Token{TokenDelim, string(r), s.row, s.col}
 	s.col += width
 	s.pos += width
 	return token
@@ -349,5 +349,5 @@ func (s *Scanner) emitPrefixOrChar(t TokenType, prefix string) *Token {
 	if strings.HasPrefix(s.input[s.pos:], prefix) {
 		return s.emitSimple(t, prefix)
 	}
-	return s.emitSimple(TokenChar, string(prefix[0]))
+	return s.emitSimple(TokenDelim, string(prefix[0]))
 }
