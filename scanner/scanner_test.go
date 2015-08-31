@@ -93,6 +93,9 @@ func TestSuccessfulScan(t *testing.T) {
 		{"url(/pic.png)", []Token{
 			T(TokenURI, "url(/pic.png)"),
 		}},
+		{"url( /pic.png )", []Token{
+			T(TokenURI, "url( /pic.png )"),
+		}},
 		{"uRl(/pic.png)", []Token{
 			T(TokenURI, "uRl(/pic.png)"),
 		}},
@@ -104,6 +107,12 @@ func TestSuccessfulScan(t *testing.T) {
 		}},
 		{"url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')", []Token{
 			T(TokenURI, "url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')"),
+		}},
+
+		// CSS2 section 4.1.1: "red-->" is IDENT "red--" followed by DELIM ">",
+		{"red-->", []Token{
+			T(TokenIdent, "red--"),
+			T(TokenChar, ">"),
 		}},
 	} {
 		tokens := []Token{}
