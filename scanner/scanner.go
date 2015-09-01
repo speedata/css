@@ -94,6 +94,7 @@ func init() {
 // New returns a new CSS scanner for the given input.
 func New(input string) *Scanner {
 	// Normalize newlines.
+	// FIXME: This is unnecessary resource consumption.
 	input = strings.Replace(input, "\r\n", "\n", -1)
 	return &Scanner{
 		input: input,
@@ -232,6 +233,7 @@ func (s *Scanner) updatePosition(text string) {
 func (s *Scanner) emitToken(t Type, v string) *Token {
 	token := &Token{t, v, s.row, s.col}
 	s.updatePosition(v)
+	token.normalize()
 	return token
 }
 
@@ -243,6 +245,7 @@ func (s *Scanner) emitSimple(t Type, v string) *Token {
 	token := &Token{t, v, s.row, s.col}
 	s.col += len(v)
 	s.pos += len(v)
+	token.normalize()
 	return token
 }
 

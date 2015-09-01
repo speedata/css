@@ -23,14 +23,14 @@ func TestSuccessfulScan(t *testing.T) {
 		{"abcd", []Token{T(Ident, "abcd")}},
 		{`"abcd"`, []Token{T(String, `"abcd"`)}},
 		{"'abcd'", []Token{T(String, "'abcd'")}},
-		{"#name", []Token{T(Hash, "#name")}},
+		{"#name", []Token{T(Hash, "name")}},
 		{"4.2", []Token{T(Number, "4.2")}},
 		{".42", []Token{T(Number, ".42")}},
 		{"42%", []Token{T(Percentage, "42%")}},
 		{"4.2%", []Token{T(Percentage, "4.2%")}},
 		{".42%", []Token{T(Percentage, ".42%")}},
 		{"42px", []Token{T(Dimension, "42px")}},
-		{"url('http://www.google.com/')", []Token{T(URI, "url('http://www.google.com/')")}},
+		{"url('http://www.google.com/')", []Token{T(URI, "http://www.google.com/")}},
 		{"U+0042", []Token{T(UnicodeRange, "U+0042")}},
 		{"<!--", []Token{T(CDO, "<!--")}},
 		{"-->", []Token{T(CDC, "-->")}},
@@ -43,6 +43,7 @@ func TestSuccessfulScan(t *testing.T) {
 		{"$=", []Token{T(SuffixMatch, "$=")}},
 		{"*=", []Token{T(SubstringMatch, "*=")}},
 		{"{", []Token{T(Delim, "{")}},
+		{"@keyword", []Token{T(AtKeyword, "keyword")}},
 		{"\uFEFF", []Token{T(BOM, "\uFEFF")}},
 
 		{"42''", []Token{
@@ -81,33 +82,33 @@ func TestSuccessfulScan(t *testing.T) {
 		{"color:#fff", []Token{
 			T(Ident, "color"),
 			T(Delim, ":"),
-			T(Hash, "#fff"),
+			T(Hash, "fff"),
 		}},
 
 		// Check note in CSS2 4.3.4:
 		// Note that COMMENT tokens cannot occur within other tokens: thus, "url(/*x*/pic.png)" denotes the URI "/*x*/pic.png", not "pic.png".
 		{"url(/*x*/pic.png)", []Token{
-			T(URI, "url(/*x*/pic.png)"),
+			T(URI, "/*x*/pic.png"),
 		}},
 
 		// More URI testing, since it's important
 		{"url(/pic.png)", []Token{
-			T(URI, "url(/pic.png)"),
+			T(URI, "/pic.png"),
 		}},
 		{"url( /pic.png )", []Token{
-			T(URI, "url( /pic.png )"),
+			T(URI, "/pic.png"),
 		}},
 		{"uRl(/pic.png)", []Token{
-			T(URI, "uRl(/pic.png)"),
+			T(URI, "/pic.png"),
 		}},
 		{"url(\"/pic.png\")", []Token{
-			T(URI, "url(\"/pic.png\")"),
+			T(URI, "/pic.png"),
 		}},
 		{"url('/pic.png')", []Token{
-			T(URI, "url('/pic.png')"),
+			T(URI, "/pic.png"),
 		}},
 		{"url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')", []Token{
-			T(URI, "url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')"),
+			T(URI, "/pic.png?badchars=('\") "),
 		}},
 
 		// CSS2 section 4.1.1: "red-->" is IDENT "red--" followed by DELIM ">",
@@ -125,10 +126,10 @@ func TestSuccessfulScan(t *testing.T) {
 		// CSS2 section 4.1.3, second bullet point: Identifier B&W? may be
 		// written in two ways
 		{"B\\&W\\?", []Token{
-			T(Ident, "B\\&W\\?"),
+			T(Ident, "B&W?"),
 		}},
 		{"B\\26 W\\3F", []Token{
-			T(Ident, "B\\26 W\\3F"),
+			T(Ident, "B&W?"),
 		}},
 		// CSS2 4.1.3 third bullet point: A backslash by itself is a DELIM.
 		{"\\", []Token{
@@ -138,8 +139,8 @@ func TestSuccessfulScan(t *testing.T) {
 		// CSS2 section 4.1.3, last bullet point: identifier test
 		// is the same as te\st.
 		// commenting out while this fails, so I can commit other tests
-		//{"test", []Token{T(Ident, "test")}},
-		//{"te\\st", []Token{T(Ident, "test")}},
+		{"test", []Token{T(Ident, "test")}},
+		{"te\\st", []Token{T(Ident, "test")}},
 	} {
 		tokens := []Token{}
 		s := New(test.input)

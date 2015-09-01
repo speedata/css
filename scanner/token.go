@@ -103,6 +103,40 @@ var tokenNames = map[Type]string{
 	BOM:            "BOM",
 }
 
+// For those types of tokens that need to have their representation
+// normalized to contain the semantic contents of the token, rather than
+// the literal contents of the token, this performs that act.
+func (t *Token) normalize() {
+	switch t.Type {
+	case Ident:
+		t.Value = unbackslash(t.Value, false)
+	case AtKeyword:
+		t.Value = unbackslash(t.Value[1:], false)
+	case String:
+		t.Value = unbackslash(t.Value, true)
+	case Hash:
+		t.Value = unbackslash(t.Value[1:], false)
+	case Dimension:
+		t.Value = unbackslash(t.Value, false)
+	case URI:
+		// this is a strict parser; only u, r, l, followed by a paren with
+		// no whitespace, is accepted.
+		trimmed := strings.TrimSpace(t.Value[4 : len(t.Value)-1])
+		if trimmed == "" {
+			t.Value = ""
+		}
+		lastIdx := len(trimmed) - 1
+		if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
+			trimmed = trimmed[1:lastIdx]
+		} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
+			trimmed = trimmed[1:lastIdx]
+		}
+		t.Value = unbackslash(trimmed, false)
+	case Function:
+		t.Value = unbackslash(t.Value, false)
+	}
+}
+
 func unbackslash(s string, isString bool) string {
 	// in general, strings are short, and do not contain backslashes; if
 	// that is the case, just bail out with no additional allocation.
