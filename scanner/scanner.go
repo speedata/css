@@ -469,17 +469,6 @@ func isHexChar(c byte) bool {
 		c >= 'A' && c <= 'F'
 }
 
-func decodeHex(in []byte) rune {
-	val := rune(0)
-
-	for _, c := range in {
-		val = val << 4
-		val = val + rune(fromHexChar(c))
-	}
-
-	return val
-}
-
 // fromHexChar copied from encoding/hex/hex.go, except this is guaranteed
 // to only be called on hex chars, so no success flag.
 func fromHexChar(c byte) byte {
@@ -493,4 +482,18 @@ func fromHexChar(c byte) byte {
 	}
 	// satisfies compiler that there is a return.
 	return 0
+}
+
+// as mentioned in fromHexChar, by construction, we know this is being
+// called only with hex values, and only in quantities that fit into the
+// rune type. C&P at your own peril. :)
+func decodeHex(in []byte) rune {
+	val := rune(0)
+
+	for _, c := range in {
+		val = val << 4
+		val = val + rune(fromHexChar(c))
+	}
+
+	return val
 }
