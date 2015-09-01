@@ -15,8 +15,11 @@ import (
 	"unicode/utf8"
 )
 
-// Type identifies the type of lexical tokens.
-type Type int
+// Type is an integer that identifies the type of the token. Only the types
+// defined as variables in the package may be used.
+type Type struct {
+	t int
+}
 
 // String returns a string representation of the token type.
 func (t Type) String() string {
@@ -49,33 +52,32 @@ func (t *Token) String() string {
 // All tokens -----------------------------------------------------------------
 
 // The complete list of tokens in CSS3.
-const (
-	// Scanner flags.
-	Error Type = iota
-	EOF
-	// From now on, only tokens from the CSS specification.
-	Ident
-	AtKeyword
-	String
-	Hash
-	Number
-	Percentage
-	Dimension
-	URI
-	UnicodeRange
-	CDO
-	CDC
-	S
-	Comment
-	Function
-	Includes
-	DashMatch
-	PrefixMatch
-	SuffixMatch
-	SubstringMatch
-	Delim
-	BOM
-)
+// Scanner flags.
+var Error = Type{0}
+var EOF = Type{1}
+
+// From now on, only tokens from the CSS specification.
+var Ident = Type{2}
+var AtKeyword = Type{3}
+var String = Type{4}
+var Hash = Type{5}
+var Number = Type{6}
+var Percentage = Type{7}
+var Dimension = Type{8}
+var URI = Type{9}
+var UnicodeRange = Type{10}
+var CDO = Type{11}
+var CDC = Type{12}
+var S = Type{13}
+var Comment = Type{14}
+var Function = Type{15}
+var Includes = Type{16}
+var DashMatch = Type{17}
+var PrefixMatch = Type{18}
+var SuffixMatch = Type{19}
+var SubstringMatch = Type{20}
+var Delim = Type{21}
+var BOM = Type{22}
 
 // tokenNames maps Type's to their names. Used for conversion to string.
 var tokenNames = map[Type]string{
