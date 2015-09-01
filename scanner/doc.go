@@ -1,16 +1,15 @@
-// Copyright 2012 The Gorilla Authors. All rights reserved.
+// Copyright 2012 The Gorilla Authors, Copyright 2015 Barracuda Networks.
+// All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 /*
-Package gorilla/css/scanner generates tokens for a CSS3 input.
+Package scanner generates tokens for a CSS2/3 input.
 
-It follows the CSS3 specification located at:
-
-	http://www.w3.org/TR/css3-syntax/
+It is a CSS2 scanner with bits of a CSS3 scanner in it.
 
 To use it, create a new scanner for a given CSS string and call Next() until
-the token returned has type TokenEOF or TokenError:
+the token returned has type scanner.EOF or scanner.Error:
 
 	s := scanner.New(myCSS)
 	for {
