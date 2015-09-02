@@ -7,9 +7,11 @@ package scanner
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
+	"unicode/utf8"
 )
 
 // Type is an integer that identifies the type of the token. Only the types
@@ -113,11 +115,17 @@ func (t *Token) normalize() {
 	case AtKeyword:
 		t.Value = unbackslash(t.Value[1:], false)
 	case String:
-		t.Value = unbackslash(t.Value, true)
+		t.Value = unbackslash(t.Value[1:len(t.Value)-1], true)
 	case Hash:
 		t.Value = unbackslash(t.Value[1:], false)
+	case Percentage:
+		t.Value = t.Value[0 : len(t.Value)-1]
 	case Dimension:
 		t.Value = unbackslash(t.Value, false)
+	case CDO:
+		t.Value = ""
+	case CDC:
+		t.Value = ""
 	case URI:
 		// this is a strict parser; only u, r, l, followed by a paren with
 		// no whitespace, is accepted.
@@ -132,9 +140,93 @@ func (t *Token) normalize() {
 			trimmed = trimmed[1:lastIdx]
 		}
 		t.Value = unbackslash(trimmed, false)
+	case Comment:
+		t.Value = t.Value[2 : len(t.Value)-2]
 	case Function:
-		t.Value = unbackslash(t.Value, false)
+		t.Value = unbackslash(t.Value[0:len(t.Value)-1], false)
+	case Includes:
+		t.Value = ""
+	case DashMatch:
+		t.Value = ""
+	case PrefixMatch:
+		t.Value = ""
+	case SuffixMatch:
+		t.Value = ""
+	case SubstringMatch:
+		t.Value = ""
 	}
+}
+
+func wr(w io.Writer, strs ...string) (err error) {
+	for _, str := range strs {
+		_, err = w.Write([]byte(str))
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// Emit will write a string representation of the given token to the target
+// io.Writer. An error will be returned if you either try to emit Error or
+// EOF, or if the Writer returns an error.
+//
+// Emit will make many small writes to the io.Writer.
+//
+// Emit assumes you have not set the token's .Value to an invalid value for
+// many of these; for instance, if you manually take a Number token and set
+// its .Value to "sometext", you will emit something that is not a number.
+func (t *Token) Emit(w io.Writer) (err error) {
+	switch t.Type {
+	case Error:
+		return errors.New("can not emit an error token")
+	case EOF:
+		return errors.New("can not emit an EOF")
+	case Ident:
+		err = wr(w, backslashifyIdent(t.Value))
+	case AtKeyword:
+		err = wr(w, "@", backslashifyIdent(t.Value))
+	case String:
+		err = wr(w, "\"", backslashifyString(t.Value), "\"")
+	case Hash:
+		err = wr(w, "#", backslashifyIdent(t.Value))
+	case Number:
+		err = wr(w, t.Value)
+	case Percentage:
+		err = wr(w, t.Value, "%")
+	case Dimension:
+		err = wr(w, t.Value)
+	case URI:
+		err = wr(w, "url('", backslashifyString(t.Value), "')")
+	case UnicodeRange:
+		err = wr(w, t.Value)
+	case CDO:
+		err = wr(w, "<!--")
+	case CDC:
+		err = wr(w, "-->")
+	case S:
+		err = wr(w, t.Value)
+	case Comment:
+		err = wr(w, "/*", t.Value, "*/")
+	case Function:
+		err = wr(w, backslashifyIdent(t.Value), "(")
+	case Includes:
+		err = wr(w, "~=")
+	case DashMatch:
+		err = wr(w, "|=")
+	case PrefixMatch:
+		err = wr(w, "^=")
+	case SuffixMatch:
+		err = wr(w, "$=")
+	case SubstringMatch:
+		err = wr(w, "*=")
+	case Delim:
+		err = wr(w, t.Value)
+	case BOM:
+		err = wr(w, "\ufeff")
+	}
+
+	return
 }
 
 func unbackslash(s string, isString bool) string {
@@ -237,6 +329,53 @@ func unbackslash(s string, isString bool) string {
 	}
 
 	return out.String()
+}
+
+func backslashifyString(s string) string {
+	res := bytes.NewBuffer(make([]byte, 0, len(s)+32))
+	b := []byte(s)
+	for {
+		r, size := utf8.DecodeRune(b)
+		if size == 0 {
+			break
+		}
+		b = b[size:]
+		switch {
+		case r == '"':
+			res.WriteRune('\\')
+			res.WriteRune(r)
+		case r >= '#':
+			res.WriteRune(r)
+		case r == '\t' || r == '!':
+			res.WriteRune(r)
+		default:
+			res.WriteRune('\\')
+			res.WriteRune(r)
+		}
+	}
+	return res.String()
+}
+
+func backslashifyIdent(s string) string {
+	res := bytes.NewBuffer(make([]byte, 0, len(s)+32))
+	b := []byte(s)
+	for {
+		r, size := utf8.DecodeRune(b)
+		if size == 0 {
+			break
+		}
+		b = b[size:]
+		if !(r >= 'a' && r <= 'z') &&
+			!(r >= 'A' && r <= 'Z') &&
+			r != '_' && r != '-' &&
+			r <= 255 {
+			res.WriteRune('\\')
+			res.WriteRune(r)
+		} else {
+			res.WriteRune(r)
+		}
+	}
+	return res.String()
 }
 
 func isWhitespace(c byte) bool {

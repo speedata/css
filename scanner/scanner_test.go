@@ -6,6 +6,7 @@
 package scanner
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -14,45 +15,62 @@ func T(ty Type, v string) Token {
 	return Token{ty, v, 0, 0}
 }
 
+func parse(t *testing.T, input string) []Token {
+	tokens := []Token{}
+	s := New(input)
+	for {
+		tok := s.Next()
+		if tok.Type == Error {
+			t.Fatalf("Error token with: %q", input)
+		}
+		if tok.Type == EOF {
+			break
+		}
+		tok.Line = 0
+		tok.Column = 0
+		tokens = append(tokens, *tok)
+	}
+	return tokens
+}
+
 func TestSuccessfulScan(t *testing.T) {
 	for _, test := range []struct {
 		input  string
 		tokens []Token
 	}{
-		{"bar(", []Token{T(Function, "bar(")}},
+		{"bar(", []Token{T(Function, "bar")}},
 		{"abcd", []Token{T(Ident, "abcd")}},
-		{`"abcd"`, []Token{T(String, `"abcd"`)}},
-		{"'abcd'", []Token{T(String, "'abcd'")}},
+		{`"abcd"`, []Token{T(String, `abcd`)}},
+		{"'abcd'", []Token{T(String, "abcd")}},
 		{"#name", []Token{T(Hash, "name")}},
 		{"4.2", []Token{T(Number, "4.2")}},
 		{".42", []Token{T(Number, ".42")}},
-		{"42%", []Token{T(Percentage, "42%")}},
-		{"4.2%", []Token{T(Percentage, "4.2%")}},
-		{".42%", []Token{T(Percentage, ".42%")}},
+		{"42%", []Token{T(Percentage, "42")}},
+		{"4.2%", []Token{T(Percentage, "4.2")}},
+		{".42%", []Token{T(Percentage, ".42")}},
 		{"42px", []Token{T(Dimension, "42px")}},
 		{"url('http://www.google.com/')", []Token{T(URI, "http://www.google.com/")}},
 		{"U+0042", []Token{T(UnicodeRange, "U+0042")}},
-		{"<!--", []Token{T(CDO, "<!--")}},
-		{"-->", []Token{T(CDC, "-->")}},
+		{"<!--", []Token{T(CDO, "")}},
+		{"-->", []Token{T(CDC, "")}},
 		{"   \n   \t   \n", []Token{T(S, "   \n   \t   \n")}},
-		{"/* foo */", []Token{T(Comment, "/* foo */")}},
-		{"bar(", []Token{T(Function, "bar(")}},
-		{"~=", []Token{T(Includes, "~=")}},
-		{"|=", []Token{T(DashMatch, "|=")}},
-		{"^=", []Token{T(PrefixMatch, "^=")}},
-		{"$=", []Token{T(SuffixMatch, "$=")}},
-		{"*=", []Token{T(SubstringMatch, "*=")}},
+		{"/* foo */", []Token{T(Comment, " foo ")}},
+		{"~=", []Token{T(Includes, "")}},
+		{"|=", []Token{T(DashMatch, "")}},
+		{"^=", []Token{T(PrefixMatch, "")}},
+		{"$=", []Token{T(SuffixMatch, "")}},
+		{"*=", []Token{T(SubstringMatch, "")}},
 		{"{", []Token{T(Delim, "{")}},
 		{"@keyword", []Token{T(AtKeyword, "keyword")}},
 		{"\uFEFF", []Token{T(BOM, "\uFEFF")}},
 
 		{"42''", []Token{
 			T(Number, "42"),
-			T(String, "''"),
+			T(String, ""),
 		}},
 		{`╯︵┻━┻"stuff"`, []Token{
 			T(Ident, "╯︵┻━┻"),
-			T(String, `"stuff"`),
+			T(String, "stuff"),
 		}},
 		{"color:red", []Token{
 			T(Ident, "color"),
@@ -71,7 +89,7 @@ func TestSuccessfulScan(t *testing.T) {
 		{"color:rgb(0,1,2)", []Token{
 			T(Ident, "color"),
 			T(Delim, ":"),
-			T(Function, "rgb("),
+			T(Function, "rgb"),
 			T(Number, "0"),
 			T(Delim, ","),
 			T(Number, "1"),
@@ -142,22 +160,19 @@ func TestSuccessfulScan(t *testing.T) {
 		{"test", []Token{T(Ident, "test")}},
 		{"te\\st", []Token{T(Ident, "test")}},
 	} {
-		tokens := []Token{}
-		s := New(test.input)
-		for {
-			tok := s.Next()
-			if tok.Type == Error {
-				t.Fatalf("Error token with: %q", test.input)
-			}
-			if tok.Type == EOF {
-				break
-			}
-			tok.Line = 0
-			tok.Column = 0
-			tokens = append(tokens, *tok)
-		}
+		tokens := parse(t, test.input)
 		if !reflect.DeepEqual(tokens, test.tokens) {
-			t.Fatalf("For input string %q, bad tokens. Expected:\n%#v\n\nGot:\n%#v", test.input, test.tokens, tokens)
+			t.Fatalf("For input string %q, bad initial parse. Expected:\n%#v\n\nGot:\n%#v", test.input, test.tokens, tokens)
+		}
+
+		// Reconstitute the input, reparse it, and see if it's the same.
+		var wr bytes.Buffer
+		for _, token := range tokens {
+			token.Emit(&wr)
+		}
+		tokens2 := parse(t, wr.String())
+		if !reflect.DeepEqual(tokens2, test.tokens) {
+			t.Fatalf("For input string %q, failed to round trip. Expected:\n%#v\nGot string: %q\nWhich parsed as:\n%#v\n", test.input, test.tokens, wr.String(), tokens2)
 		}
 	}
 }

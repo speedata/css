@@ -50,12 +50,6 @@ var productions = map[Type]string{
 	S:        `{wc}+`,
 	Comment:  `/\*[^\*]*[\*]+(?:[^/][^\*]*[\*]+)*/`,
 	Function: `{ident}\(`,
-	//Includes:       `~=`,
-	//DashMatch:      `\|=`,
-	//PrefixMatch:    `\^=`,
-	//SuffixMatch:    `\$=`,
-	//SubstringMatch: `\*=`,
-	//Delim:           `[^"']`,
 	//BOM:            "\uFEFF",
 }
 
