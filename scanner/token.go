@@ -48,63 +48,6 @@ func (t *Token) String() string {
 		t.Type, t.Line, t.Column, t.Value)
 }
 
-// All tokens -----------------------------------------------------------------
-
-// The complete list of tokens in CSS3.
-// Scanner flags.
-var Error = Type{0}
-var EOF = Type{1}
-
-// From now on, only tokens from the CSS specification.
-var Ident = Type{2}
-var AtKeyword = Type{3}
-var String = Type{4}
-var Hash = Type{5}
-var Number = Type{6}
-var Percentage = Type{7}
-var Dimension = Type{8}
-var URI = Type{9}
-var UnicodeRange = Type{10}
-var CDO = Type{11}
-var CDC = Type{12}
-var S = Type{13}
-var Comment = Type{14}
-var Function = Type{15}
-var Includes = Type{16}
-var DashMatch = Type{17}
-var PrefixMatch = Type{18}
-var SuffixMatch = Type{19}
-var SubstringMatch = Type{20}
-var Delim = Type{21}
-var BOM = Type{22}
-
-// tokenNames maps Type's to their names. Used for conversion to string.
-var tokenNames = map[Type]string{
-	Error:          "error",
-	EOF:            "EOF",
-	Ident:          "IDENT",
-	AtKeyword:      "ATKEYWORD",
-	String:         "STRING",
-	Hash:           "HASH",
-	Number:         "NUMBER",
-	Percentage:     "PERCENTAGE",
-	Dimension:      "DIMENSION",
-	URI:            "URI",
-	UnicodeRange:   "UNICODE-RANGE",
-	CDO:            "CDO",
-	CDC:            "CDC",
-	S:              "S",
-	Comment:        "COMMENT",
-	Function:       "FUNCTION",
-	Includes:       "INCLUDES",
-	DashMatch:      "DASHMATCH",
-	PrefixMatch:    "PREFIXMATCH",
-	SuffixMatch:    "SUFFIXMATCH",
-	SubstringMatch: "SUBSTRINGMATCH",
-	Delim:          "DELIM",
-	BOM:            "BOM",
-}
-
 // For those types of tokens that need to have their representation
 // normalized to contain the semantic contents of the token, rather than
 // the literal contents of the token, this performs that act.
@@ -250,14 +193,14 @@ func unbackslash(s string, isString bool) string {
 			break
 		}
 		if c != '\\' {
-			out.WriteByte(c)
+			_ = out.WriteByte(c)
 			continue
 		}
 
 		// c is now the first byte after the backslash
 		c, err = in.ReadByte()
 		if err == io.EOF {
-			out.WriteByte('\\')
+			_ = out.WriteByte('\\')
 			break
 		}
 
@@ -273,7 +216,7 @@ func unbackslash(s string, isString bool) string {
 			if c == '\r' {
 				c, err = in.ReadByte()
 				if err == io.EOF {
-					out.WriteByte('\\')
+					_ = out.WriteByte('\\')
 					break
 				}
 				if c == '\n' {
@@ -282,7 +225,7 @@ func unbackslash(s string, isString bool) string {
 					// standard does not say what to do with backslash-CR
 					// that is not followed by a LF. Go ahead and eat the
 					// CR and return to normal processing.
-					in.UnreadByte()
+					_ = in.UnreadByte()
 					continue
 				}
 			}
@@ -315,17 +258,17 @@ func unbackslash(s string, isString bool) string {
 					break HEXLOOP
 				default:
 					// Non-space chars do not get eaten
-					in.UnreadByte()
+					_ = in.UnreadByte()
 					break HEXLOOP
 				}
 			}
 
 			// The rune this represents:
 			r := decodeHex(hexChars)
-			out.WriteRune(r)
+			_, _ = out.WriteRune(r)
 
 		default:
-			out.WriteByte(c)
+			_ = out.WriteByte(c)
 		}
 
 	}
@@ -344,15 +287,15 @@ func backslashifyString(s string) string {
 		b = b[size:]
 		switch {
 		case r == '"':
-			res.WriteRune('\\')
-			res.WriteRune(r)
+			_, _ = res.WriteRune('\\')
+			_, _ = res.WriteRune(r)
 		case r >= '#':
-			res.WriteRune(r)
+			_, _ = res.WriteRune(r)
 		case r == '\t' || r == '!':
-			res.WriteRune(r)
+			_, _ = res.WriteRune(r)
 		default:
-			res.WriteRune('\\')
-			res.WriteRune(r)
+			_, _ = res.WriteRune('\\')
+			_, _ = res.WriteRune(r)
 		}
 	}
 	return res.String()
@@ -371,10 +314,10 @@ func backslashifyIdent(s string) string {
 			!(r >= 'A' && r <= 'Z') &&
 			r != '_' && r != '-' &&
 			r <= 255 {
-			res.WriteRune('\\')
-			res.WriteRune(r)
+			_, _ = res.WriteRune('\\')
+			_, _ = res.WriteRune(r)
 		} else {
-			res.WriteRune(r)
+			_, _ = res.WriteRune(r)
 		}
 	}
 	return res.String()

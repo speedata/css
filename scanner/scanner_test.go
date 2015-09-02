@@ -247,7 +247,7 @@ func TestErrors(t *testing.T) {
 	}
 }
 
-var testErr = errors.New("error")
+var errTest = errors.New("error")
 
 func TestCoverage(t *testing.T) {
 	if fromHexChar('N') != 0 {
@@ -269,7 +269,7 @@ func TestCoverage(t *testing.T) {
 	}
 
 	err := wr(BadWriter{}, "anything")
-	if err != testErr {
+	if err != errTest {
 		t.Fatal("wr succeeds even with errors")
 	}
 
@@ -280,13 +280,13 @@ func TestCoverage(t *testing.T) {
 		t.Fatal("Unexpected string value of the EOF token")
 	}
 	// Just don't crash
-	tok.String()
+	_ = tok.String()
 	tok.Value = "something really long"
-	tok.String()
+	_ = tok.String()
 }
 
 type BadWriter struct{}
 
 func (bw BadWriter) Write(b []byte) (n int, err error) {
-	return 0, testErr
+	return 0, errTest
 }

@@ -160,20 +160,18 @@ func (s *Scanner) Next() *Token {
 		match := matchers[String].FindString(input)
 		if match != "" {
 			return s.emitToken(String, match)
-		} else {
-			s.err = &Token{Error, "unclosed quotation mark", s.row, s.col}
-			return s.err
 		}
+		s.err = &Token{Error, "unclosed quotation mark", s.row, s.col}
+		return s.err
 	case '/':
 		// Comment, error or Char.
 		if len(input) > 1 && input[1] == '*' {
 			match := matchers[Comment].FindString(input)
 			if match != "" {
 				return s.emitToken(Comment, match)
-			} else {
-				s.err = &Token{Error, "unclosed comment", s.row, s.col}
-				return s.err
 			}
+			s.err = &Token{Error, "unclosed comment", s.row, s.col}
+			return s.err
 		}
 		return s.emitSimple(Delim, "/")
 	case '~':
