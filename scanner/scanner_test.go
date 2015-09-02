@@ -7,6 +7,8 @@ package scanner
 
 import (
 	"bytes"
+	"errors"
+	"io/ioutil"
 	"reflect"
 	"testing"
 )
@@ -15,13 +17,17 @@ func T(ty Type, v string) Token {
 	return Token{ty, v, 0, 0}
 }
 
-func parse(t *testing.T, input string) []Token {
+func parse(input string) ([]Token, error) {
 	tokens := []Token{}
 	s := New(input)
 	for {
 		tok := s.Next()
 		if tok.Type == Error {
-			t.Fatalf("Error token with: %q", input)
+			tok = s.Next()
+			if tok.Type != Error {
+				panic("Fatal error: got non-error after error")
+			}
+			return tokens, errors.New("error token")
 		}
 		if tok.Type == EOF {
 			break
@@ -30,7 +36,7 @@ func parse(t *testing.T, input string) []Token {
 		tok.Column = 0
 		tokens = append(tokens, *tok)
 	}
-	return tokens
+	return tokens, nil
 }
 
 func TestSuccessfulScan(t *testing.T) {
@@ -159,8 +165,22 @@ func TestSuccessfulScan(t *testing.T) {
 		// commenting out while this fails, so I can commit other tests
 		{"test", []Token{T(Ident, "test")}},
 		{"te\\st", []Token{T(Ident, "test")}},
+
+		// Coverage:
+		{". .", []Token{T(Delim, "."), T(S, " "), T(Delim, ".")}},
+		{"# ", []Token{T(Delim, "#"), T(S, " ")}},
+		{"@ ", []Token{T(Delim, "@"), T(S, " ")}},
+		{"/ ", []Token{T(Delim, "/"), T(S, " ")}},
+		{"~ ", []Token{T(Delim, "~"), T(S, " ")}},
+		{"url('    ')", []Token{T(URI, "    ")}},
+		{"url(\"    \")", []Token{T(URI, "    ")}},
+		{"url(     )", []Token{T(URI, "")}},
+		{"'\t!'", []Token{T(String, "\t!")}},
 	} {
-		tokens := parse(t, test.input)
+		tokens, err := parse(test.input)
+		if err != nil {
+			t.Fatalf("For input string %q, unexpected parse error", test.input)
+		}
 		if !reflect.DeepEqual(tokens, test.tokens) {
 			t.Fatalf("For input string %q, bad initial parse. Expected:\n%#v\n\nGot:\n%#v", test.input, test.tokens, tokens)
 		}
@@ -170,7 +190,10 @@ func TestSuccessfulScan(t *testing.T) {
 		for _, token := range tokens {
 			token.Emit(&wr)
 		}
-		tokens2 := parse(t, wr.String())
+		tokens2, err := parse(wr.String())
+		if err != nil {
+			t.Fatalf("When parsing reconstituted %q, unexpected error", wr.String())
+		}
 		if !reflect.DeepEqual(tokens2, test.tokens) {
 			t.Fatalf("For input string %q, failed to round trip. Expected:\n%#v\nGot string: %q\nWhich parsed as:\n%#v\n", test.input, test.tokens, wr.String(), tokens2)
 		}
@@ -210,4 +233,60 @@ func TestUnbackslash(t *testing.T) {
 				test.in, result, test.out)
 		}
 	}
+}
+
+func TestErrors(t *testing.T) {
+	for _, test := range []string{
+		"url('http://",
+		"moo /* unclosed comment",
+	} {
+		_, err := parse(test)
+		if err == nil {
+			t.Fatalf("While parsing %q, unexpected success", test)
+		}
+	}
+}
+
+var testErr = errors.New("error")
+
+func TestCoverage(t *testing.T) {
+	if fromHexChar('N') != 0 {
+		t.Fatal("Unexpected failure of fromHexChar")
+	}
+	if unbackslash("\\\r", true) != "\\" {
+		t.Fatal("Incorrect unbackslashing for backslash-CR")
+	}
+	if unbackslash("\\\rx", true) != "x" {
+		t.Fatal("Incorrect handling of backslash-CR-(not LF)")
+	}
+	tok := &Token{Error, "", 0, 0}
+	if tok.Emit(ioutil.Discard) == nil {
+		t.Fatal("Can emit an error???")
+	}
+	tok.Type = EOF
+	if tok.Emit(ioutil.Discard) == nil {
+		t.Fatal("Can emit EOF???")
+	}
+
+	err := wr(BadWriter{}, "anything")
+	if err != testErr {
+		t.Fatal("wr succeeds even with errors")
+	}
+
+	if EOF.String() != "EOF" {
+		t.Fatal("Unexpected string value of the EOF token")
+	}
+	if EOF.GoString() != "EOF" {
+		t.Fatal("Unexpected string value of the EOF token")
+	}
+	// Just don't crash
+	tok.String()
+	tok.Value = "something really long"
+	tok.String()
+}
+
+type BadWriter struct{}
+
+func (bw BadWriter) Write(b []byte) (n int, err error) {
+	return 0, testErr
 }

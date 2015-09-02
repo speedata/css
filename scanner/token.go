@@ -132,9 +132,11 @@ func (t *Token) normalize() {
 		trimmed := strings.TrimSpace(t.Value[4 : len(t.Value)-1])
 		if trimmed == "" {
 			t.Value = ""
+			return
 		}
 		lastIdx := len(trimmed) - 1
 		if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
+			fmt.Printf("Trimming: %q\n", trimmed)
 			trimmed = trimmed[1:lastIdx]
 		} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
 			trimmed = trimmed[1:lastIdx]
