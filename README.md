@@ -13,10 +13,11 @@ post-processed into their "actual" value... that is, the CSS identifiers
 The URL token will contain the literal URL, with the CSS encoding processed
 away. Etc. Code to correctly emit legal tokens has also been added.
 
-I've also taken the liberty of exporting the `TokenType`, which turns out
-to be pretty useful for external processors. To reduce code stuttering, the
-Tokens have been renamed to remove the `Token` prefix, and `TokenChar` is
-now `TokenDelim`, as that is what CSS calls it.
+I've also taken the liberty of exporting the `Type` (`TokenType` in
+Gorilla's version), which turns out to be pretty useful for external
+processors. To reduce code stuttering, the Tokens have been renamed to
+remove the `Token` prefix, and `TokenChar` is now `TokenDelim`, as that is
+what CSS calls it.
 
 As of this writing, my personal focus has been on using this to scan
 HTML-style style tags as correctly as possible. I can't vouch for whether
