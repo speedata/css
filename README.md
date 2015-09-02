@@ -1,6 +1,8 @@
 css
 ===
 
+[![Build Status](https://travis-ci.org/thejerf/css.png?branch=master)](https://travis-ci.org/thejerf/css)
+
 A CSS3 tokenizer.
 
 This is gratefully forked from the [Gorilla CSS
