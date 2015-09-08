@@ -5,6 +5,11 @@ css
 
 A CSS3 tokenizer.
 
+Status: As of this writing I don't promise full stability, but it now has
+Jerf-standard 100% coverage, [full godoc]( and is clean by the standards of
+many linters. I'm planning on building production-quality software on top
+of this, you probably can too.
+
 This is gratefully forked from the [Gorilla CSS
 scanner](http://www.gorillatoolkit.org/pkg/css/scanner), and had
 significant and __BACKWARDS-INCOMPATIBLE__ changes applied to it.
