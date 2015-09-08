@@ -79,7 +79,6 @@ func (t *Token) normalize() {
 		}
 		lastIdx := len(trimmed) - 1
 		if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
-			fmt.Printf("Trimming: %q\n", trimmed)
 			trimmed = trimmed[1:lastIdx]
 		} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
 			trimmed = trimmed[1:lastIdx]
