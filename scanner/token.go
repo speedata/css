@@ -77,11 +77,13 @@ func (t *Token) normalize() {
 			t.Value = ""
 			return
 		}
-		lastIdx := len(trimmed) - 1
-		if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
-			trimmed = trimmed[1:lastIdx]
-		} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
-			trimmed = trimmed[1:lastIdx]
+		if len(trimmed) >= 2 {
+			lastIdx := len(trimmed) - 1
+			if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
+				trimmed = trimmed[1:lastIdx]
+			} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
+				trimmed = trimmed[1:lastIdx]
+			}
 		}
 		t.Value = unbackslash(trimmed, false)
 	case Comment:

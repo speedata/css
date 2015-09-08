@@ -176,6 +176,9 @@ func TestSuccessfulScan(t *testing.T) {
 		{"url(\"    \")", []Token{T(URI, "    ")}},
 		{"url(     )", []Token{T(URI, "")}},
 		{"'\t!'", []Token{T(String, "\t!")}},
+
+		// Crashers found in fuzz testing:
+		{"url(')", []Token{T(URI, "'")}},
 	} {
 		tokens, err := parse(test.input)
 		if err != nil {
