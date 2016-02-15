@@ -19,6 +19,9 @@ the standards of many linters. Run through
 production-quality software on it, thought as I write this it's not too
 heavy a workout yet.
 
+Semantic versioning is being used, so this may also be imported via
+`gopkg.in/thejerf/css.v1/scanner`.
+
 Accepting PRs if you have them.
 
 Starting with the commit after dad94e3e4d, I will be signing this repo
