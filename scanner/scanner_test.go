@@ -8,6 +8,7 @@ package scanner
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -200,6 +201,19 @@ func TestSuccessfulScan(t *testing.T) {
 		if !reflect.DeepEqual(tokens2, test.tokens) {
 			t.Fatalf("For input string %q, failed to round trip. Expected:\n%#v\nGot string: %q\nWhich parsed as:\n%#v\n", test.input, test.tokens, wr.String(), tokens2)
 		}
+	}
+}
+
+func TestIdentEncoding(t *testing.T) {
+	// this tests identifier encoding. That's mostly covered by
+	// TestCSSEncode, this just double-checks at an integration level.
+	var wr bytes.Buffer
+	token := T(Ident, "x2y")
+	fmt.Println("Before ident")
+	token.Emit(&wr)
+	fmt.Println("After ident")
+	if string(wr.Bytes()) != "x\\32 y" {
+		t.Fatal("Can't correctly encode identifiers:", string(wr.Bytes()))
 	}
 }
 
