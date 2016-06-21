@@ -8,7 +8,6 @@ package scanner
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -303,9 +302,7 @@ func TestIdentEncoding(t *testing.T) {
 	// TestCSSEncode, this just double-checks at an integration level.
 	var wr bytes.Buffer
 	token := T(Ident, "x2y")
-	fmt.Println("Before ident")
 	token.Emit(&wr)
-	fmt.Println("After ident")
 	if string(wr.Bytes()) != "x\\32 y" {
 		t.Fatal("Can't correctly encode identifiers:", string(wr.Bytes()))
 	}
