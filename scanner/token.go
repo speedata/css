@@ -7,6 +7,7 @@ package scanner
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -316,7 +317,9 @@ func backslashifyIdent(s string) string {
 			r != '_' && r != '-' &&
 			r <= 255 {
 			_, _ = res.WriteRune('\\')
-			_, _ = res.WriteRune(r)
+			// we just asserted in the if that this is <= 255, so it fits
+			// in a byte
+			_ = cssEncodeHex(res, byte(r))
 		} else {
 			_, _ = res.WriteRune(r)
 		}
@@ -361,4 +364,12 @@ func decodeHex(in []byte) rune {
 	}
 
 	return val
+}
+
+func cssEncodeHex(w io.Writer, b byte) error {
+	h := make([]byte, 2)
+	hex.Encode(h, []byte{b})
+	_, _ = w.Write(h)
+	_, err := w.Write([]byte(" "))
+	return err
 }

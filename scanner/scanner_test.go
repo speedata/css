@@ -1,4 +1,4 @@
-// Copyright 2012 The Gorilla Authors, Copyright 2015 Barracuda Networks.
+// Copyright as given in CONTRIBUTORS
 // All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -177,6 +177,100 @@ func TestSuccessfulScan(t *testing.T) {
 		{"url(     )", []Token{T(URI, "")}},
 		{"'\t!'", []Token{T(String, "\t!")}},
 
+		{"@font-face { font-family: 'FAM'; src: url('URI') format('truetype'); }", []Token{
+			T(AtKeyword, "font-face"),
+			T(S, " "),
+			T(Delim, "{"),
+			T(S, " "),
+			T(Ident, "font-family"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(String, "FAM"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "src"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(URI, "URI"),
+			T(S, " "),
+			T(Function, "format"),
+			T(String, "truetype"),
+			T(Delim, ")"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Delim, "}"),
+		}},
+
+		{"@font-face { font-family: 'HAPPY-FAMILY'; font-style: normal; font-weight: 400; src: url('/FIND/THIS') format('truetype'); } @font-face { font-family: 'ANOTHER HAPPY FAMILY'; font-style: normal; font-weight: 400; src: url('https://FIND/THAT/') format('truetype'); }", []Token{
+			T(AtKeyword, "font-face"),
+			T(S, " "),
+			T(Delim, "{"),
+			T(S, " "),
+			T(Ident, "font-family"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(String, "HAPPY-FAMILY"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "font-style"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(Ident, "normal"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "font-weight"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(Number, "400"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "src"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(URI, "/FIND/THIS"),
+			T(S, " "),
+			T(Function, "format"),
+			T(String, "truetype"),
+			T(Delim, ")"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Delim, "}"),
+			T(S, " "),
+			T(AtKeyword, "font-face"),
+			T(S, " "),
+			T(Delim, "{"),
+			T(S, " "),
+			T(Ident, "font-family"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(String, "ANOTHER HAPPY FAMILY"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "font-style"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(Ident, "normal"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "font-weight"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(Number, "400"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Ident, "src"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(URI, "https://FIND/THAT/"),
+			T(S, " "),
+			T(Function, "format"),
+			T(String, "truetype"),
+			T(Delim, ")"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Delim, "}"),
+		}},
+
 		// Crashers found in fuzz testing:
 		{"url(')", []Token{T(URI, "'")}},
 	} {
@@ -200,6 +294,17 @@ func TestSuccessfulScan(t *testing.T) {
 		if !reflect.DeepEqual(tokens2, test.tokens) {
 			t.Fatalf("For input string %q, failed to round trip. Expected:\n%#v\nGot string: %q\nWhich parsed as:\n%#v\n", test.input, test.tokens, wr.String(), tokens2)
 		}
+	}
+}
+
+func TestIdentEncoding(t *testing.T) {
+	// this tests identifier encoding. That's mostly covered by
+	// TestCSSEncode, this just double-checks at an integration level.
+	var wr bytes.Buffer
+	token := T(Ident, "x2y")
+	token.Emit(&wr)
+	if string(wr.Bytes()) != "x\\32 y" {
+		t.Fatal("Can't correctly encode identifiers:", string(wr.Bytes()))
 	}
 }
 
