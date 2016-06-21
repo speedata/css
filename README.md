@@ -27,8 +27,16 @@ Accepting PRs if you have them.
 Starting with the commit after dad94e3e4d, I will be signing this repo
 with the [jerf keybase.io key](https://keybase.io/jerf).
 
-Backwards Incompatibility
-=========================
+Versions
+========
+
+1. 1.0.1 - June 21, 2016
+  * Fix issue with over-consuming strings delimited by apostrophes.
+1. 1.0.0
+  * Initial release.
+
+Backwards Incompatibility With Gorilla
+======================================
 
 This codebase has been made heavily backwards-incompatible to the original
 codebase. The tokens emitted by this scanner are
