@@ -52,6 +52,10 @@ remove the `Token` prefix, and `TokenChar` is now `TokenDelim`, as that is
 what CSS calls it. (Even if I tend to agree `TokenChar` makes more sense,
 for this sort of code, best to stick to the standard.)
 
+It turns out the combination of tokens having their "actual" value,
+exposing the token types, and having code to re-emit the CSS has made
+this useful to other people. If that's what you need, well, here it is.
+
 On The Utility of Godoc.org
 ===========================
 
