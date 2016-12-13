@@ -177,6 +177,21 @@ func TestSuccessfulScan(t *testing.T) {
 		{"url(     )", []Token{T(URI, "")}},
 		{"'\t!'", []Token{T(String, "\t!")}},
 
+		{".bla0 { background: #000; }", []Token{
+			T(Delim, "."),
+			T(Ident, "bla0"),
+			T(S, " "),
+			T(Delim, "{"),
+			T(S, " "),
+			T(Ident, "background"),
+			T(Delim, ":"),
+			T(S, " "),
+			T(Hash, "000"),
+			T(Delim, ";"),
+			T(S, " "),
+			T(Delim, "}"),
+		}},
+
 		{"@font-face { font-family: 'FAM'; src: url('URI') format('truetype'); }", []Token{
 			T(AtKeyword, "font-face"),
 			T(S, " "),
@@ -297,14 +312,26 @@ func TestSuccessfulScan(t *testing.T) {
 	}
 }
 
-func TestIdentEncoding(t *testing.T) {
-	// this tests identifier encoding. That's mostly covered by
-	// TestCSSEncode, this just double-checks at an integration level.
-	var wr bytes.Buffer
-	token := T(Ident, "x2y")
-	token.Emit(&wr)
-	if string(wr.Bytes()) != "x\\32 y" {
-		t.Fatal("Can't correctly encode identifiers:", string(wr.Bytes()))
+func TestEncoding(t *testing.T) {
+	variants := map[Token]string{
+		T(Ident, "bla0"):        `bla0`,
+		T(Ident, "_allowed"):    `_allowed`,
+		T(Ident, "0forbidden"):  `\30 forbidden`,
+		T(Ident, "-1forbidden"): `-\31 forbidden`,
+		T(Hash, "cafebabe"):     `#cafebabe`,
+		T(Hash, "000"):          `#000`,
+		T(Hash, "00a"):          `#00a`,
+		T(Hash, "a00"):          `#a00`,
+		T(Hash, "773300"):       `#773300`,
+	}
+
+	for token, expectation := range variants {
+		buf := &bytes.Buffer{}
+		token.Emit(buf)
+
+		if buf.String() != expectation {
+			t.Errorf("OMG, totally expected %+v to be emitted as '%s', but got ' %s'\n", token, expectation, buf.String())
+		}
 	}
 }
 

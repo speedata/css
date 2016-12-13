@@ -136,7 +136,7 @@ func (t *Token) Emit(w io.Writer) (err error) {
 	case String:
 		err = wr(w, "\"", backslashifyString(t.Value), "\"")
 	case Hash:
-		err = wr(w, "#", backslashifyIdent(t.Value))
+		err = wr(w, "#", backslashifyHash(t.Value))
 	case Number:
 		err = wr(w, t.Value)
 	case Percentage:
@@ -306,7 +306,36 @@ func backslashifyString(s string) string {
 func backslashifyIdent(s string) string {
 	res := bytes.NewBuffer(make([]byte, 0, len(s)+32))
 	b := []byte(s)
-	for {
+	startedWithADash := false
+	for i := 0; ; i++ {
+		r, size := utf8.DecodeRune(b)
+		if size == 0 {
+			break
+		}
+		if i == 0 && r == '-' {
+			startedWithADash = true
+		}
+		b = b[size:]
+		if !(r >= 'a' && r <= 'z') &&
+			!(r >= 'A' && r <= 'Z') &&
+			!(r >= '0' && r <= '9' && i > 0 && (startedWithADash == false || i != 1)) &&
+			r != '_' && r != '-' &&
+			r <= 255 {
+			_, _ = res.WriteRune('\\')
+			// we just asserted in the if that this is <= 255, so it fits
+			// in a byte
+			_ = cssEncodeHex(res, byte(r))
+		} else {
+			_, _ = res.WriteRune(r)
+		}
+	}
+	return res.String()
+}
+
+func backslashifyHash(s string) string {
+	res := bytes.NewBuffer(make([]byte, 0, len(s)+32))
+	b := []byte(s)
+	for i := 0; ; i++ {
 		r, size := utf8.DecodeRune(b)
 		if size == 0 {
 			break
@@ -314,6 +343,7 @@ func backslashifyIdent(s string) string {
 		b = b[size:]
 		if !(r >= 'a' && r <= 'z') &&
 			!(r >= 'A' && r <= 'Z') &&
+			!(r >= '0' && r <= '9') &&
 			r != '_' && r != '-' &&
 			r <= 255 {
 			_, _ = res.WriteRune('\\')
