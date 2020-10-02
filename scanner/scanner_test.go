@@ -134,6 +134,9 @@ func TestSuccessfulScan(t *testing.T) {
 		{"url('/pic.png?badchars=\\(\\'\\\"\\)\\ ')", []Token{
 			T(URI, "/pic.png?badchars=('\") "),
 		}},
+		{"local('pic.png')", []Token{
+			T(Local, "pic.png"),
+		}},
 
 		// CSS2 section 4.1.1: "red-->" is IDENT "red--" followed by DELIM ">",
 		{"red-->", []Token{
@@ -192,7 +195,7 @@ func TestSuccessfulScan(t *testing.T) {
 			T(Delim, "}"),
 		}},
 
-		{"@font-face { font-family: 'FAM'; src: url('URI') format('truetype'); }", []Token{
+		{"@font-face { font-family: 'FAM'; src: local('LOCAL'), url('URI') format('truetype'); }", []Token{
 			T(AtKeyword, "font-face"),
 			T(S, " "),
 			T(Delim, "{"),
@@ -205,6 +208,9 @@ func TestSuccessfulScan(t *testing.T) {
 			T(S, " "),
 			T(Ident, "src"),
 			T(Delim, ":"),
+			T(S, " "),
+			T(Local, "LOCAL"),
+			T(Delim, ","),
 			T(S, " "),
 			T(URI, "URI"),
 			T(S, " "),

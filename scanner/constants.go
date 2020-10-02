@@ -40,7 +40,10 @@ var Percentage = Type{7}
 var Dimension = Type{8}
 
 // URI token type is for URIs. The .Value will be the processed URI.
-var URI = Type{9}
+var URI = Type{100}
+
+// Local token type is for local(). The .Value will be the processed URI.
+var Local = Type{101}
 
 // UnicodeRange token type is for Unicode ranges.
 var UnicodeRange = Type{10}
@@ -96,6 +99,7 @@ var tokenNames = map[Type]string{
 	Percentage:     "PERCENTAGE",
 	Dimension:      "DIMENSION",
 	URI:            "URI",
+	Local:          "LOCAL",
 	UnicodeRange:   "UNICODE-RANGE",
 	CDO:            "CDO",
 	CDC:            "CDC",

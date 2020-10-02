@@ -1,8 +1,8 @@
+// +build gofuzz
+
 package scanner
 
 import "bytes"
-
-// +build gofuzz
 
 func Fuzz(data []byte) int {
 	t := []*Token{}

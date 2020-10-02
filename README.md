@@ -1,7 +1,11 @@
 css
 ===
 
+Forked from https://github.com/thejerf/css.
+
+<!--
 [![Build Status](https://travis-ci.org/thejerf/css.png?branch=master)](https://travis-ci.org/thejerf/css)
+-->
 
 A CSS3 tokenizer.
 

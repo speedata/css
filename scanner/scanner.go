@@ -44,6 +44,7 @@ var productions = map[Type]string{
 	Percentage:   `{num}%`,
 	Dimension:    `{num}{ident}`,
 	URI:          `[Uu][Rr][Ll]\({w}(?:{string}|{urlchar}*){w}\)`,
+	Local:        `[Ll][Oo][Cc][Aa][Ll]\({w}(?:{string}|{urlchar}*){w}\)`,
 	UnicodeRange: `[Uu]\+[0-9A-F\?]{1,6}(?:-[0-9A-F]{1,6})?`,
 	//CDO:            `<!--`,
 	CDC:      `-->`,
@@ -63,6 +64,7 @@ var matchers = map[Type]*regexp.Regexp{}
 // can't be used.
 var matchOrder = []Type{
 	URI,
+	Local,
 	Function,
 	UnicodeRange,
 	Ident,

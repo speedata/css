@@ -87,6 +87,23 @@ func (t *Token) normalize() {
 			}
 		}
 		t.Value = unbackslash(trimmed, false)
+	case Local:
+		// this is a strict parser; only l,o,c,a,l followed by a paren with
+		// no whitespace, is accepted.
+		trimmed := strings.TrimSpace(t.Value[6 : len(t.Value)-1])
+		if trimmed == "" {
+			t.Value = ""
+			return
+		}
+		if len(trimmed) >= 2 {
+			lastIdx := len(trimmed) - 1
+			if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
+				trimmed = trimmed[1:lastIdx]
+			} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
+				trimmed = trimmed[1:lastIdx]
+			}
+		}
+		t.Value = unbackslash(trimmed, false)
 	case Comment:
 		t.Value = t.Value[2 : len(t.Value)-2]
 	case Function:
@@ -145,6 +162,8 @@ func (t *Token) Emit(w io.Writer) (err error) {
 		err = wr(w, t.Value)
 	case URI:
 		err = wr(w, "url('", backslashifyString(t.Value), "')")
+	case Local:
+		err = wr(w, "local('", backslashifyString(t.Value), "')")
 	case UnicodeRange:
 		err = wr(w, t.Value)
 	case CDO:
