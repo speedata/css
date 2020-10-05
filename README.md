@@ -1,11 +1,10 @@
 css
 ===
 
-Forked from https://github.com/thejerf/css.
+Forked from https://github.com/thejerf/css and added support for `local` keyword.
 
-<!--
-[![Build Status](https://travis-ci.org/thejerf/css.png?branch=master)](https://travis-ci.org/thejerf/css)
--->
+[![Build Status](https://travis-ci.org/speedata/css.svg?branch=master)](https://travis-ci.org/speedata/css)
+
 
 A CSS3 tokenizer.
 
