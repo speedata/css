@@ -8,7 +8,7 @@ package scanner
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"testing"
 )
@@ -401,11 +401,11 @@ func TestCoverage(t *testing.T) {
 		t.Fatal("Incorrect handling of backslash-CR-(not LF)")
 	}
 	tok := &Token{Error, "", 0, 0}
-	if tok.Emit(ioutil.Discard) == nil {
+	if tok.Emit(io.Discard) == nil {
 		t.Fatal("Can emit an error???")
 	}
 	tok.Type = EOF
-	if tok.Emit(ioutil.Discard) == nil {
+	if tok.Emit(io.Discard) == nil {
 		t.Fatal("Can emit EOF???")
 	}
 
