@@ -137,7 +137,18 @@ func TestSuccessfulScan(t *testing.T) {
 		{"local('pic.png')", []Token{
 			T(Local, "pic.png"),
 		}},
-
+		{"local(pic.png)", []Token{
+			T(Local, "pic.png"),
+		}},
+		{"format('opentype')", []Token{
+			T(Format, "opentype"),
+		}},
+		{"format(opentype)", []Token{
+			T(Format, "opentype"),
+		}},
+		{"tech(color-COLRv1)", []Token{
+			T(Tech, "color-COLRv1"),
+		}},
 		// CSS2 section 4.1.1: "red-->" is IDENT "red--" followed by DELIM ">",
 		{"red-->", []Token{
 			T(Ident, "red--"),
@@ -195,7 +206,7 @@ func TestSuccessfulScan(t *testing.T) {
 			T(Delim, "}"),
 		}},
 
-		{"@font-face { font-family: 'FAM'; src: local('LOCAL'), url('URI') format('truetype'); }", []Token{
+		{`@font-face { font-family: 'FAM'; src: local('LOCAL'), url('URI') format('truetype') tech("color-SVG"); }`, []Token{
 			T(AtKeyword, "font-face"),
 			T(S, " "),
 			T(Delim, "{"),
@@ -214,9 +225,9 @@ func TestSuccessfulScan(t *testing.T) {
 			T(S, " "),
 			T(URI, "URI"),
 			T(S, " "),
-			T(Function, "format"),
-			T(String, "truetype"),
-			T(Delim, ")"),
+			T(Format, "truetype"),
+			T(S, " "),
+			T(Tech, "color-SVG"),
 			T(Delim, ";"),
 			T(S, " "),
 			T(Delim, "}"),
@@ -250,9 +261,7 @@ func TestSuccessfulScan(t *testing.T) {
 			T(S, " "),
 			T(URI, "/FIND/THIS"),
 			T(S, " "),
-			T(Function, "format"),
-			T(String, "truetype"),
-			T(Delim, ")"),
+			T(Format, "truetype"),
 			T(Delim, ";"),
 			T(S, " "),
 			T(Delim, "}"),
@@ -284,9 +293,7 @@ func TestSuccessfulScan(t *testing.T) {
 			T(S, " "),
 			T(URI, "https://FIND/THAT/"),
 			T(S, " "),
-			T(Function, "format"),
-			T(String, "truetype"),
-			T(Delim, ")"),
+			T(Format, "truetype"),
 			T(Delim, ";"),
 			T(S, " "),
 			T(Delim, "}"),

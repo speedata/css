@@ -42,8 +42,14 @@ var Dimension = Type{8}
 // URI token type is for URIs. The .Value will be the processed URI.
 var URI = Type{100}
 
-// Local token type is for local(). The .Value will be the processed URI.
+// Local token type is for local(). The .Value will be the processed contents.
 var Local = Type{101}
+
+// Format token type is for format(). The .Value will be the format.
+var Format = Type{102}
+
+// Tech token from src:
+var Tech = Type{103}
 
 // UnicodeRange token type is for Unicode ranges.
 var UnicodeRange = Type{10}
@@ -100,6 +106,8 @@ var tokenNames = map[Type]string{
 	Dimension:      "DIMENSION",
 	URI:            "URI",
 	Local:          "LOCAL",
+	Format:         "FORMAT",
+	Tech:           "TECH",
 	UnicodeRange:   "UNICODE-RANGE",
 	CDO:            "CDO",
 	CDC:            "CDC",

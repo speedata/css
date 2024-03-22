@@ -104,6 +104,40 @@ func (t *Token) normalize() {
 			}
 		}
 		t.Value = unbackslash(trimmed, false)
+	case Format:
+		// this is a strict parser; only f,o,r,m,a,t followed by a paren with
+		// no whitespace, is accepted.
+		trimmed := strings.TrimSpace(t.Value[7 : len(t.Value)-1])
+		if trimmed == "" {
+			t.Value = ""
+			return
+		}
+		if len(trimmed) >= 2 {
+			lastIdx := len(trimmed) - 1
+			if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
+				trimmed = trimmed[1:lastIdx]
+			} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
+				trimmed = trimmed[1:lastIdx]
+			}
+		}
+		t.Value = unbackslash(trimmed, false)
+	case Tech:
+		// this is a strict parser; only t,e,c,h followed by a paren with
+		// no whitespace, is accepted.
+		trimmed := strings.TrimSpace(t.Value[5 : len(t.Value)-1])
+		if trimmed == "" {
+			t.Value = ""
+			return
+		}
+		if len(trimmed) >= 2 {
+			lastIdx := len(trimmed) - 1
+			if trimmed[0] == '\'' && trimmed[lastIdx] == '\'' {
+				trimmed = trimmed[1:lastIdx]
+			} else if trimmed[0] == '"' && trimmed[lastIdx] == '"' {
+				trimmed = trimmed[1:lastIdx]
+			}
+		}
+		t.Value = unbackslash(trimmed, false)
 	case Comment:
 		t.Value = t.Value[2 : len(t.Value)-2]
 	case Function:
@@ -164,6 +198,10 @@ func (t *Token) Emit(w io.Writer) (err error) {
 		err = wr(w, "url('", backslashifyString(t.Value), "')")
 	case Local:
 		err = wr(w, "local('", backslashifyString(t.Value), "')")
+	case Format:
+		err = wr(w, "format('", backslashifyString(t.Value), "')")
+	case Tech:
+		err = wr(w, "tech('", backslashifyString(t.Value), "')")
 	case UnicodeRange:
 		err = wr(w, t.Value)
 	case CDO:

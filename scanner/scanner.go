@@ -45,6 +45,8 @@ var productions = map[Type]string{
 	Dimension:    `{num}{ident}`,
 	URI:          `[Uu][Rr][Ll]\({w}(?:{string}|{urlchar}*){w}\)`,
 	Local:        `[Ll][Oo][Cc][Aa][Ll]\({w}(?:{string}|{urlchar}*){w}\)`,
+	Format:       `[fF][oO][rR][mM][Aa][tT]\({w}(?:{string}|{urlchar}*){w}\)`,
+	Tech:         `[tT][eE][Cc][hH]\({w}(?:{string}|{urlchar}*){w}\)`,
 	UnicodeRange: `[Uu]\+[0-9A-F\?]{1,6}(?:-[0-9A-F]{1,6})?`,
 	//CDO:            `<!--`,
 	CDC:      `-->`,
@@ -65,6 +67,8 @@ var matchers = map[Type]*regexp.Regexp{}
 var matchOrder = []Type{
 	URI,
 	Local,
+	Format,
+	Tech,
 	Function,
 	UnicodeRange,
 	Ident,
