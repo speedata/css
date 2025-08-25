@@ -202,6 +202,11 @@ func (s *Scanner) Next() *Token {
 	// Test all regexps, in order.
 	for _, token := range matchOrder {
 		if match := matchers[token].FindString(input); match != "" {
+			if token == Function {
+				if match == "not(" || match == "has(" || match == "is(" || match == "where(" {
+					return s.emitToken(Ident, strings.TrimSuffix(match, "("))
+				}
+			}
 			return s.emitToken(token, match)
 		}
 	}

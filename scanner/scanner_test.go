@@ -44,6 +44,7 @@ func TestSuccessfulScan(t *testing.T) {
 		input  string
 		tokens []Token
 	}{
+		{"pre:not(blah)", []Token{T(Ident, "pre"), T(Delim, ":"), T(Ident, "not"), T(Delim, "("), T(Ident, "blah"), T(Delim, ")")}},
 		{"bar(", []Token{T(Function, "bar")}},
 		{"abcd", []Token{T(Ident, "abcd")}},
 		{`"abcd"`, []Token{T(String, `abcd`)}},
