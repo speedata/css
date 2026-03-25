@@ -27,4 +27,4 @@ Following the CSS specification, an error can only occur when the scanner
 finds an unclosed quote or unclosed comment. Everything else is tokenizable
 and it is up to a parser to make sense of the token stream.
 */
-package scanner
+package css
