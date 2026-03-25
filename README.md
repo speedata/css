@@ -15,7 +15,7 @@ Originally based on the [Gorilla CSS scanner](http://www.gorillatoolkit.org/pkg/
 ## Usage
 
 ```go
-import "github.com/speedata/css/scanner"
+import scanner "github.com/speedata/css"
 
 s := scanner.New(input)
 for {
