@@ -1,74 +1,59 @@
-css
-===
+# css/scanner
 
-Forked from https://github.com/thejerf/css and added support for `local` keyword.
+A fast CSS3 tokenizer for Go.
 
-[![Build Status](https://travis-ci.org/speedata/css.svg?branch=master)](https://travis-ci.org/speedata/css)
+This package tokenizes CSS input into a stream of typed tokens (identifiers, strings, numbers, dimensions, URLs, comments, etc.) following the CSS Syntax specification. It is intended to be used by a lexer or parser.
 
+## Origin
 
-A CSS3 tokenizer.
+Originally based on the [Gorilla CSS scanner](http://www.gorillatoolkit.org/pkg/css/scanner), significantly reworked by [thejerf/css](https://github.com/thejerf/css) (Barracuda Networks), then forked by [speedata](https://github.com/speedata) with further changes:
 
-This is gratefully forked from the [Gorilla CSS
-scanner](http://www.gorillatoolkit.org/pkg/css/scanner), and had
-significant and __BACKWARDS-INCOMPATIBLE__ changes applied to it.
+- CSS Syntax Level 3 support: custom properties (`--my-var`), signed numbers (`-42px`, `+3em`)
+- Hand-written scanner replacing all regex-based tokenization (~10x faster)
+- Support for `local()`, `format()`, and `tech()` function tokens
 
-Status
-======
+## Usage
 
-Jerf-standard 100% coverage, [full
-godoc](https://godoc.org/github.com/thejerf/css/scanner) and is clean by
-the standards of many linters. Run through
-[go-fuzz](https://github.com/dvyukov/go-fuzz). I have shipped
-production-quality software on it, thought as I write this it's not too
-heavy a workout yet.
+```go
+import "github.com/speedata/css/scanner"
 
-Semantic versioning is being used, so this may also be imported via
-`gopkg.in/thejerf/css.v1/scanner`.
+s := scanner.New(input)
+for {
+    token := s.Next()
+    if token.Type == scanner.EOF || token.Type == scanner.Error {
+        break
+    }
+    // token.Type, token.Value, token.Line, token.Column
+}
+```
 
-Accepting PRs if you have them.
+## Token types
 
-Starting with the commit after dad94e3e4d, I will be signing this repo
-with the [jerf keybase.io key](https://keybase.io/jerf).
+| Token | Example input | `.Value` |
+|-------|--------------|----------|
+| `Ident` | `color`, `-webkit-foo`, `--my-var` | `color`, `-webkit-foo`, `--my-var` |
+| `Function` | `rgb(` | `rgb` |
+| `AtKeyword` | `@media` | `media` |
+| `Hash` | `#fff` | `fff` |
+| `String` | `"hello"` | `hello` |
+| `Number` | `42`, `-3.14`, `+0.5` | `42`, `-3.14`, `+0.5` |
+| `Percentage` | `50%` | `50` |
+| `Dimension` | `12px`, `-1.5em` | `12px`, `-1.5em` |
+| `URI` | `url('bg.png')` | `bg.png` |
+| `Local` | `local('Font')` | `Font` |
+| `Format` | `format('woff2')` | `woff2` |
+| `Tech` | `tech('color-SVG')` | `color-SVG` |
+| `UnicodeRange` | `U+0042` | `U+0042` |
+| `S` | `   ` | `   ` |
+| `Comment` | `/* text */` | ` text ` |
+| `Delim` | `:`, `,`, `{` | `:`, `,`, `{` |
 
-Versions
-========
+Tokens are post-processed to contain semantic values: CSS escapes are resolved, quotes and delimiters are stripped. Tokens can be re-emitted to valid CSS via `token.Emit(w)`.
 
-1. 1.0.1 - June 21, 2016
-  * Fix issue with over-consuming strings delimited by apostrophes.
-1. 1.0.0
-  * Initial release.
+## Error handling
 
-Backwards Incompatibility With Gorilla
-======================================
+Following the CSS specification, errors only occur for unclosed quotes or unclosed comments. Everything else is tokenizable; it is up to a parser to make sense of the token stream.
 
-This codebase has been made heavily backwards-incompatible to the original
-codebase. The tokens emitted by this scanner are
-post-processed into their "actual" value... that is, the CSS identifiers
-`test` and `te\st` will both yield an Ident token containing `test`.
-The URL token will contain the literal URL, with the CSS encoding processed
-away. Etc. Code to correctly emit legal tokens has also been added.
+## License
 
-I've also taken the liberty of exporting the `Type` (`TokenType` in
-Gorilla's version), which turns out to be pretty useful for external
-processors. To reduce code stuttering, the Tokens have been renamed to
-remove the `Token` prefix, and `TokenChar` is now `TokenDelim`, as that is
-what CSS calls it. (Even if I tend to agree `TokenChar` makes more sense,
-for this sort of code, best to stick to the standard.)
-
-It turns out the combination of tokens having their "actual" value,
-exposing the token types, and having code to re-emit the CSS has made
-this useful to other people. If that's what you need, well, here it is.
-
-On The Utility of Godoc.org
-===========================
-
-This project taught to me to [search on godoc.org](https://godoc.org/) for Go
-packages rather than Google. Google only showed the Gorilla tokenizer,
-which I could tell I needed many changes to make work. Much later,
-search on godoc, and had I found the [benbjohnson css
-parser](https://github.com/benbjohnson/css) I probably would have used that
-instead. By the time I found it, it was too late to switch practically.
-
-That said, I _am_ still using this in what is now a production environment
-for a non-trivial application, so for all I just said, this is a serious
-codebase.
+BSD 3-Clause. See [LICENSE](LICENSE) for details.
