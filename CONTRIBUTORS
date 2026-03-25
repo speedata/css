@@ -1,6 +1,7 @@
-The following contributors hold copyright rights to this package, licensed
-in accordance with the license:
+The following contributors hold copyright over portions of this package,
+licensed in accordance with the LICENSE file:
 
-Copyright 2012 The Gorilla Authors
-Copyright 2016 Barracuda Networks
+Copyright 2012 The Gorilla Authors (original CSS scanner)
+Copyright 2015-2016 Barracuda Networks (thejerf/css fork: semantic token values, re-emission)
 Copyright 2016 Robert Lillack (https://github.com/roblillack)
+Copyright 2020-2026 Patrick Gundlach (https://github.com/speedata)

@@ -345,7 +345,7 @@ func backslashifyString(s string) string {
 		}
 		b = b[size:]
 		switch {
-		case r == '"':
+		case r == '"' || r == '\'':
 			_, _ = res.WriteRune('\\')
 			_, _ = res.WriteRune(r)
 		case r >= '#':
